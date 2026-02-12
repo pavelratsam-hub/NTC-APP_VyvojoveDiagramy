@@ -1,0 +1,27 @@
+.paper-boundary {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 2px dashed #999;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.paper-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  font-size: 11px;
+  color: #666;
+  background: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  white-space: nowrap;
+}
+
+.paper-size {
+  margin-left: 6px;
+  color: #999;
+}

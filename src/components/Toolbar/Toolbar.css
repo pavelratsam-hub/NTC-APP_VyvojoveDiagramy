@@ -1,0 +1,141 @@
+.toolbar {
+  width: 200px;
+  height: 100%;
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.toolbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.toolbar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toolbar-section h3 {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.toolbar-btn:hover {
+  background: #e8f4ff;
+  border-color: #0066cc;
+}
+
+.toolbar-btn.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+.shape-preview {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #333;
+}
+
+.shape-action {
+  border-radius: 2px;
+}
+
+.shape-decision {
+  transform: rotate(45deg) scale(0.7);
+}
+
+.shape-startend {
+  border-radius: 12px;
+}
+
+.shape-area {
+  border-radius: 2px;
+  border-style: dashed;
+  background: #f3f4f6;
+}
+
+/* Řádek s tlačítky */
+.toolbar-row {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar-btn-small {
+  flex: 1;
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.toolbar-btn-small:hover {
+  background: #e8f4ff;
+  border-color: #0066cc;
+}
+
+.toolbar-btn-small.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+/* Inputy pro vlastní rozměry */
+.toolbar-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.toolbar-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #666;
+}
+
+.toolbar-inputs input {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 100%;
+}
+
+.toolbar-inputs input:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+
+/* Skrytý file input pro import */
+.hidden-file-input {
+  display: none;
+}

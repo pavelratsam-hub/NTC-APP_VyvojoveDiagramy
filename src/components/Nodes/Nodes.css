@@ -1,0 +1,349 @@
+/* Popis (description) – vlevo nahoře nad tvarem */
+.node-description {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 11px;
+  color: #555;
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 15;
+  cursor: default;
+}
+
+.node-description-placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+.node-description-input {
+  border: 1px solid #0066cc;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+  outline: none;
+  background: white;
+  font-family: inherit;
+  min-width: 60px;
+  color: #333;
+}
+
+.node-description-input:focus {
+  border-color: #0044aa;
+  box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.2);
+}
+
+/* Společné styly */
+.node-label {
+  padding: 6px 10px;
+  font-size: 14px;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Akce - obdélník */
+.node-action {
+  position: relative;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  width: 100%;
+  height: 100%;
+  min-width: 80px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Start/Konec - zaoblený obdélník */
+.node-startend {
+  position: relative;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 20px;
+  width: 100%;
+  height: 100%;
+  min-width: 80px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Podmínka - kosočtverec */
+.node-decision-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 80px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-decision-shape {
+  position: absolute;
+  inset: 0;
+  background: var(--diamond-stroke, #333);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.node-decision-shape::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: var(--diamond-fill, white);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.node-decision-label {
+  position: relative;
+  z-index: 1;
+  font-size: 12px;
+  text-align: center;
+  max-width: 60%;
+  padding: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden;
+}
+
+/* Handle styly – skryté ve výchozím stavu, viditelné jen při selected */
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: #0066cc;
+  border: 2px solid white;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.react-flow__node.selected .react-flow__handle {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.react-flow__handle:hover {
+  background: #0044aa;
+}
+
+/* Speciální pozice pro kosočtverec */
+.handle-decision {
+  background: #0066cc;
+}
+
+.handle-decision.handle-top {
+  top: 0;
+}
+
+.handle-decision.handle-bottom {
+  bottom: 0;
+}
+
+.handle-decision.handle-left {
+  left: 0;
+}
+
+.handle-decision.handle-right {
+  right: 0;
+}
+
+/* Textarea pro editaci */
+.node-textarea {
+  border: none;
+  padding: 6px 10px;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.node-textarea:focus {
+  outline: 1px solid #0066cc;
+  outline-offset: -1px;
+}
+
+.node-textarea-decision {
+  position: relative;
+  z-index: 2;
+  max-width: 60%;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+
+/* Resizer styly */
+.node-resizer-line {
+  border-color: #0066cc !important;
+  border-width: 1px !important;
+}
+
+.node-resizer-handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: white !important;
+  border: 2px solid #0066cc !important;
+  border-radius: 2px !important;
+}
+
+.node-resizer-handle:hover {
+  background: #0066cc !important;
+}
+
+/* Barevná paleta */
+.color-palette {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 3px 5px;
+  z-index: 20;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.color-swatch:hover {
+  transform: scale(1.2);
+}
+
+.color-swatch.active {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 1px #0066cc;
+}
+
+/* Popis oblasti – barva z inline style */
+.area-description .node-description-placeholder {
+  color: inherit;
+  opacity: 0.45;
+}
+
+/* Oblast (Area) – vždy pod ostatními nody */
+.react-flow__node-area {
+  z-index: -1 !important;
+  pointer-events: all !important;
+}
+
+.node-area {
+  width: 100%;
+  height: 100%;
+  min-width: 100px;
+  min-height: 80px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.node-area-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.node-area-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: default;
+}
+
+/* Ikona zámku – uvnitř oblasti, pravý horní roh, viditelná jen při hover */
+.area-lock-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  z-index: 20;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.react-flow__node-area:hover .area-lock-icon {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.area-lock-icon:hover {
+  background: #f3f4f6;
+}
+
+.area-controls {
+  position: absolute;
+  bottom: -56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 20;
+}
+
+.area-toggles {
+  display: flex;
+  gap: 4px;
+}
+
+.area-toggle-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.area-toggle-btn:hover {
+  background: #f3f4f6;
+}
+
+.area-toggle-btn.active {
+  background: #dbeafe;
+  border-color: #1e40af;
+  color: #1e40af;
+}

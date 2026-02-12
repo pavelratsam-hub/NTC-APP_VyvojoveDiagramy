@@ -1,0 +1,102 @@
+/* Edge path – explicitní stroke pro html-to-image export */
+.react-flow__edge-path {
+  stroke: #333;
+  stroke-width: 2;
+}
+
+/* Edge label container */
+.edge-label-container {
+  position: absolute;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Edge label */
+.edge-label {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  cursor: grab;
+  min-height: 20px;
+  user-select: none;
+}
+
+.edge-label-container.label-dragging .edge-label {
+  cursor: grabbing;
+}
+
+.edge-label:hover {
+  border-color: #0066cc;
+}
+
+.edge-label.empty {
+  color: #999;
+  font-style: italic;
+  border-style: dashed;
+}
+
+/* Edge input */
+.edge-input {
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  min-width: 80px;
+  text-align: center;
+}
+
+.edge-input:focus {
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+/* Edge style toggle button */
+.edge-style-toggle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #0066cc;
+  background: white;
+  color: #0066cc;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.edge-style-toggle:hover {
+  background: #0066cc;
+  color: white;
+}
+
+/* Edge drag handle for moving step edge segments */
+.edge-drag-handle {
+  position: absolute;
+  pointer-events: all;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0066cc;
+  border: 2px solid white;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  /* cursor is set inline (ns-resize / ew-resize) based on segment direction */
+}
+
+.edge-drag-handle:hover {
+  background: #0044aa;
+  width: 12px;
+  height: 12px;
+}
+
+.edge-drag-handle.dragging {
+  background: #0044aa;
+  width: 12px;
+  height: 12px;
+}
