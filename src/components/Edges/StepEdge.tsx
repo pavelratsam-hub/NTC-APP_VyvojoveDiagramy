@@ -6,7 +6,7 @@ import {
   getSmoothStepPath,
   type EdgeProps,
 } from '@xyflow/react'
-import type { DiagramEdgeData } from '../../types/diagram'
+import type { DiagramEdge, DiagramEdgeData } from '../../types/diagram'
 import './Edges.css'
 
 /* ── Geometry helpers ── */
@@ -140,7 +140,7 @@ export function StepEdge({
   selected,
   data,
   markerEnd,
-}: EdgeProps<DiagramEdgeData>) {
+}: EdgeProps<DiagramEdge>) {
   const [isEditing, setIsEditing] = useState(false)
   const [labelText, setLabelText] = useState(data?.label || '')
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null)
@@ -306,7 +306,8 @@ export function StepEdge({
         setEdges((edges) =>
           edges.map((edge) => {
             if (edge.id !== id) return edge
-            const prev = edge.data?.segmentOffsets
+            const d = edge.data as DiagramEdgeData | undefined
+            const prev = d?.segmentOffsets
             const newOffsets = prev && prev.length === defaultSegs.length
               ? [...prev]
               : new Array(defaultSegs.length).fill(0)
@@ -334,7 +335,8 @@ export function StepEdge({
       setEdges((edges) =>
         edges.map((edge) => {
           if (edge.id !== id) return edge
-          const prev = edge.data?.segmentOffsets
+          const d = edge.data as DiagramEdgeData | undefined
+          const prev = d?.segmentOffsets
           if (!prev) return edge
           const newOffsets = [...prev]
           newOffsets[segIdx] = 0

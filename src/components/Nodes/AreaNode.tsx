@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useReactFlow, NodeResizer, type NodeProps } from '@xyflow/react'
-import { COLOR_PAIRS, type DiagramNodeData } from '../../types/diagram'
+import { COLOR_PAIRS, type DiagramNode } from '../../types/diagram'
 import { useResizeModifiers } from '../../hooks/useResizeModifiers'
 import './Nodes.css'
 
-function AreaNode({ id, data, selected }: NodeProps<DiagramNodeData>) {
+function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const resizeMods = useResizeModifiers()
   const [isEditingDesc, setIsEditingDesc] = useState(false)
   const [descText, setDescText] = useState(data.description ?? '')

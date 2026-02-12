@@ -6,7 +6,7 @@ import {
   getStraightPath,
   type EdgeProps,
 } from '@xyflow/react'
-import type { DiagramEdgeData } from '../../types/diagram'
+import type { DiagramEdge } from '../../types/diagram'
 import './Edges.css'
 
 export function StraightEdge({
@@ -18,7 +18,7 @@ export function StraightEdge({
   selected,
   data,
   markerEnd,
-}: EdgeProps<DiagramEdgeData>) {
+}: EdgeProps<DiagramEdge>) {
   const [isEditing, setIsEditing] = useState(false)
   const [labelText, setLabelText] = useState(data?.label || '')
   const inputRef = useRef<HTMLInputElement>(null)

@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Handle, Position, useReactFlow, NodeResizer, type NodeProps } from '@xyflow/react'
-import { COLOR_PAIRS, type DiagramNodeData } from '../../types/diagram'
+import { COLOR_PAIRS, type DiagramNode } from '../../types/diagram'
 import { useResizeModifiers } from '../../hooks/useResizeModifiers'
 import './Nodes.css'
 
-function ActionNode({ id, data, selected }: NodeProps<DiagramNodeData>) {
+function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const resizeMods = useResizeModifiers()
   const [isEditing, setIsEditing] = useState(false)
   const [text, setText] = useState(data.label)

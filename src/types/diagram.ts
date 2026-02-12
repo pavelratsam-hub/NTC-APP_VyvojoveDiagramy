@@ -18,7 +18,7 @@ export const COLOR_PAIRS: ColorPair[] = [
   { fill: '#f3f4f6', stroke: '#374151' }, // Šedá
 ]
 
-export interface DiagramNodeData {
+export type DiagramNodeData = {
   label: string
   description?: string
   wrapText?: boolean
@@ -28,15 +28,17 @@ export interface DiagramNodeData {
   lineStyle?: 'solid' | 'dashed'
   showFill?: boolean
   locked?: boolean
+  [key: string]: unknown
 }
 
 export type DiagramNode = Node<DiagramNodeData>
 
-export interface DiagramEdgeData {
+export type DiagramEdgeData = {
   label?: string
   lineStyle?: 'solid' | 'dashed'
   segmentOffsets?: number[]
   labelPosition?: number  // 0–1 along path length, default 0.5
+  [key: string]: unknown
 }
 
 export type DiagramEdge = Edge<DiagramEdgeData>
