@@ -56,11 +56,24 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
     [handleBlur, data.label]
   )
 
+  const fontSize = data.fontSize ?? 14
+
   const setColor = useCallback((colorIndex: number) => {
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === id ? { ...node, data: { ...node.data, colorIndex } } : node
       )
+    )
+  }, [id, setNodes])
+
+  const changeFontSize = useCallback((delta: number) => {
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.id !== id) return node
+        const current = (node.data as typeof data).fontSize ?? 14
+        const next = Math.max(8, Math.min(32, current + delta))
+        return { ...node, data: { ...node.data, fontSize: next } }
+      })
     )
   }, [id, setNodes])
 
@@ -138,9 +151,10 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             className="node-textarea node-textarea-decision"
+            style={{ fontSize }}
           />
         ) : (
-          <div className="node-decision-label">
+          <div className="node-decision-label" style={{ fontSize }}>
             {data.label}
           </div>
         )}
@@ -156,6 +170,11 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
                   title={`Barva ${i + 1}`}
                 />
               ))}
+            </div>
+            <div className="font-size-controls">
+              <button className="font-size-btn" onClick={() => changeFontSize(-2)} title="Zmenšit písmo">A−</button>
+              <span className="font-size-value">{fontSize}</span>
+              <button className="font-size-btn" onClick={() => changeFontSize(2)} title="Zvětšit písmo">A+</button>
             </div>
           </>
         )}

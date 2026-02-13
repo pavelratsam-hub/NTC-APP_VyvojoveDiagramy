@@ -23,6 +23,7 @@ export type DiagramNodeData = {
   description?: string
   wrapText?: boolean
   colorIndex?: number
+  fontSize?: number
   groupColor?: string
   groupLabel?: string
   lineStyle?: 'solid' | 'dashed'

@@ -140,12 +140,13 @@ export function StepEdge({
   selected,
   data,
   markerEnd,
+  markerStart,
 }: EdgeProps<DiagramEdge>) {
   const [isEditing, setIsEditing] = useState(false)
   const [labelText, setLabelText] = useState(data?.label || '')
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null)
   const [labelDragging, setLabelDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { setEdges, screenToFlowPosition } = useReactFlow()
 
   // 1. Default path (no offsets)
@@ -198,9 +199,9 @@ export function StepEdge({
   // ── label editing ──
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.select()
     }
   }, [isEditing])
 
@@ -219,14 +220,43 @@ export function StepEdge({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') handleBlur()
+      if (e.key === 'Enter' && e.altKey) {
+        e.preventDefault()
+        const ta = e.target as HTMLTextAreaElement
+        const start = ta.selectionStart
+        const end = ta.selectionEnd
+        const newText = labelText.slice(0, start) + '\n' + labelText.slice(end)
+        setLabelText(newText)
+        requestAnimationFrame(() => {
+          ta.selectionStart = ta.selectionEnd = start + 1
+        })
+        return
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        handleBlur()
+      }
       if (e.key === 'Escape') {
         setLabelText(data?.label || '')
         setIsEditing(false)
       }
     },
-    [handleBlur, data?.label]
+    [handleBlur, data?.label, labelText]
   )
+
+  const reverseEdge = useCallback(() => {
+    setEdges((edges) =>
+      edges.map((edge) =>
+        edge.id === id
+          ? {
+              ...edge,
+              markerEnd: edge.markerStart || undefined,
+              markerStart: edge.markerEnd || undefined,
+            }
+          : edge
+      )
+    )
+  }, [id, setEdges])
 
   const toggleStyle = useCallback(() => {
     setEdges((edges) =>
@@ -358,6 +388,7 @@ export function StepEdge({
         id={id}
         path={edgePath}
         markerEnd={markerEnd}
+        markerStart={markerStart}
         style={{ strokeDasharray: isDashed ? '5,5' : 'none' }}
       />
 
@@ -390,16 +421,34 @@ export function StepEdge({
             }}
             onMouseDown={handleLabelMouseDown}
           >
+            {selected && !isEditing && (
+              <div className="edge-buttons">
+                <button
+                  className="edge-style-toggle"
+                  onClick={reverseEdge}
+                  title="Otočit směr šipky"
+                >
+                  ⇄
+                </button>
+                <button
+                  className="edge-style-toggle"
+                  onClick={toggleStyle}
+                  title={isDashed ? 'Plná čára' : 'Čárkovaná čára'}
+                >
+                  {isDashed ? '┅' : '─'}
+                </button>
+              </div>
+            )}
             {isEditing ? (
-              <input
-                ref={inputRef}
-                type="text"
+              <textarea
+                ref={textareaRef}
                 value={labelText}
                 onChange={(e) => setLabelText(e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                className="edge-input"
+                className="edge-textarea"
                 placeholder="Popisek..."
+                rows={Math.max(1, labelText.split('\n').length)}
               />
             ) : (
               <div
@@ -408,15 +457,6 @@ export function StepEdge({
               >
                 {data?.label || ''}
               </div>
-            )}
-            {selected && !isEditing && (
-              <button
-                className="edge-style-toggle"
-                onClick={toggleStyle}
-                title={isDashed ? 'Plná čára' : 'Čárkovaná čára'}
-              >
-                {isDashed ? '┅' : '─'}
-              </button>
             )}
           </div>
         </EdgeLabelRenderer>

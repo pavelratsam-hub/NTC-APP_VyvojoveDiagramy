@@ -9,6 +9,7 @@
   position: absolute;
   pointer-events: all;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
 }
@@ -23,6 +24,8 @@
   cursor: grab;
   min-height: 20px;
   user-select: none;
+  white-space: pre-wrap;
+  text-align: center;
 }
 
 .edge-label-container.label-dragging .edge-label {
@@ -39,19 +42,29 @@
   border-style: dashed;
 }
 
-/* Edge input */
-.edge-input {
+/* Edge textarea (multiline label editing) */
+.edge-textarea {
   border: 1px solid #0066cc;
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
+  font-family: inherit;
   outline: none;
   min-width: 80px;
   text-align: center;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
 }
 
-.edge-input:focus {
+.edge-textarea:focus {
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+/* Edge buttons group */
+.edge-buttons {
+  display: flex;
+  gap: 2px;
 }
 
 /* Edge style toggle button */

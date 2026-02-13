@@ -81,6 +81,45 @@ function App() {
   const dragStartScreen = useRef<{ x: number; y: number } | null>(null)
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number; width: number; height: number } | null>(null) // screen px
 
+  // --- Undo history ---
+  const MAX_HISTORY = 50
+  const historyRef = useRef<{ nodes: Node[]; edges: Edge[] }[]>([])
+  const isRestoringRef = useRef(false)
+  const historyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSnapshotRef = useRef<string>('')
+
+  useEffect(() => {
+    if (isRestoringRef.current) {
+      isRestoringRef.current = false
+      return
+    }
+    if (historyTimer.current) clearTimeout(historyTimer.current)
+    historyTimer.current = setTimeout(() => {
+      const snapshot = JSON.stringify({ nodes, edges })
+      if (snapshot !== lastSnapshotRef.current) {
+        if (lastSnapshotRef.current) {
+          historyRef.current.push(JSON.parse(lastSnapshotRef.current))
+          if (historyRef.current.length > MAX_HISTORY) {
+            historyRef.current.shift()
+          }
+        }
+        lastSnapshotRef.current = snapshot
+      }
+    }, 300)
+    return () => {
+      if (historyTimer.current) clearTimeout(historyTimer.current)
+    }
+  }, [nodes, edges])
+
+  const undo = useCallback(() => {
+    const prev = historyRef.current.pop()
+    if (!prev) return
+    isRestoringRef.current = true
+    lastSnapshotRef.current = JSON.stringify(prev)
+    setNodes(prev.nodes)
+    setEdges(prev.edges)
+  }, [setNodes, setEdges])
+
   // --- Autosave s debounce 500ms ---
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -381,6 +420,12 @@ function App() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
 
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault()
+        undo()
+        return
+      }
+
       if (e.ctrlKey && e.key === 'c') {
         const selected = nodes.filter((n) => n.selected)
         if (selected.length === 0) return
@@ -408,7 +453,7 @@ function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTool, nodes, setNodes])
+  }, [activeTool, nodes, setNodes, undo])
 
   return (
     <div className="app-container">
