@@ -4,6 +4,7 @@ import {
   Controls,
   Background,
   BackgroundVariant,
+  ConnectionMode,
   SelectionMode,
   addEdge,
   useNodesState,
@@ -478,6 +479,7 @@ function App() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          connectionMode={ConnectionMode.Loose}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           defaultEdgeOptions={defaultEdgeOptions}

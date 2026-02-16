@@ -135,10 +135,14 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
         </div>
       )}
       <div className="node-decision-wrapper" onDoubleClick={handleDoubleClick}>
-        <Handle type="target" position={Position.Top} id="top" className="handle-decision handle-top" />
-        <Handle type="target" position={Position.Left} id="left" className="handle-decision handle-left" />
-        <Handle type="source" position={Position.Right} id="right" className="handle-decision handle-right" />
-        <Handle type="source" position={Position.Bottom} id="bottom" className="handle-decision handle-bottom" />
+        <Handle type="target" position={Position.Top} id="top-target" className="handle-decision handle-top" />
+        <Handle type="source" position={Position.Top} id="top-source" className="handle-decision handle-top" />
+        <Handle type="target" position={Position.Left} id="left-target" className="handle-decision handle-left" />
+        <Handle type="source" position={Position.Left} id="left-source" className="handle-decision handle-left" />
+        <Handle type="target" position={Position.Right} id="right-target" className="handle-decision handle-right" />
+        <Handle type="source" position={Position.Right} id="right-source" className="handle-decision handle-right" />
+        <Handle type="target" position={Position.Bottom} id="bottom-target" className="handle-decision handle-bottom" />
+        <Handle type="source" position={Position.Bottom} id="bottom-source" className="handle-decision handle-bottom" />
         <div
           className="node-decision-shape"
           style={{ '--diamond-fill': colorPair.fill, '--diamond-stroke': colorPair.stroke } as React.CSSProperties}
