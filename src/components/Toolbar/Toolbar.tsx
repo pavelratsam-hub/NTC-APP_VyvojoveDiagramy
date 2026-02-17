@@ -12,6 +12,7 @@ interface ToolbarProps {
   onPaperChange: (settings: PaperSettings) => void
   showPaper: boolean
   onTogglePaper: () => void
+  onNewDiagram: () => void
   onExport: () => void
   onImport: (file: File) => void
   onExportPNG: () => void
@@ -27,6 +28,7 @@ function Toolbar({
   onPaperChange,
   showPaper,
   onTogglePaper,
+  onNewDiagram,
   onExport,
   onImport,
   onExportPNG,
@@ -65,6 +67,10 @@ function Toolbar({
   return (
     <div className="toolbar">
       <h2 className="toolbar-title">Nástroje</h2>
+
+      <button className="toolbar-btn" onClick={onNewDiagram}>
+        <span>Nová plocha</span>
+      </button>
 
       <div className="toolbar-section">
         <h3>Tvary</h3>

@@ -141,8 +141,32 @@ function App() {
   )
 
   // --- Export JSON ---
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const data = JSON.stringify({ nodes, edges, paper: paperSettings }, null, 2)
+
+    // File System Access API (Chrome/Edge) – uživatel si vybere umístění a název
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await (window as unknown as { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
+          suggestedName: `diagram-${Date.now()}.json`,
+          types: [
+            {
+              description: 'JSON soubor',
+              accept: { 'application/json': ['.json'] },
+            },
+          ],
+        })
+        const writable = await handle.createWritable()
+        await writable.write(data)
+        await writable.close()
+        return
+      } catch (err) {
+        // Uživatel zrušil dialog – nic nedělat
+        if (err instanceof DOMException && err.name === 'AbortError') return
+      }
+    }
+
+    // Fallback pro prohlížeče bez File System Access API (Firefox apod.)
     const blob = new Blob([data], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -153,6 +177,26 @@ function App() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }, [nodes, edges, paperSettings])
+
+  // --- Nová plocha ---
+  const handleNewDiagram = useCallback(() => {
+    const answer = window.confirm('Chcete před vymazáním exportovat diagram do JSON?')
+    if (answer) {
+      handleExport().then(() => {
+        setNodes(defaultNodes)
+        setEdges([])
+        historyRef.current = []
+        lastSnapshotRef.current = ''
+        localStorage.removeItem(STORAGE_KEY)
+      })
+    } else {
+      setNodes(defaultNodes)
+      setEdges([])
+      historyRef.current = []
+      lastSnapshotRef.current = ''
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [handleExport, setNodes, setEdges])
 
   // --- Import JSON ---
   const handleImport = useCallback((file: File) => {
@@ -467,6 +511,7 @@ function App() {
         onPaperChange={setPaperSettings}
         showPaper={showPaper}
         onTogglePaper={() => setShowPaper(!showPaper)}
+        onNewDiagram={handleNewDiagram}
         onExport={handleExport}
         onImport={handleImport}
         onExportPNG={handleExportPNG}
