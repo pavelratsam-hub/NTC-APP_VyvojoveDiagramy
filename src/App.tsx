@@ -16,7 +16,7 @@ import {
   type OnConnect,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { toPng } from 'html-to-image'
+import { toPng, toSvg } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 
 import Toolbar from './components/Toolbar/Toolbar'
@@ -263,7 +263,7 @@ function App() {
 
         toPng(rfEl, {
           quality: 1,
-          pixelRatio: 2,
+          pixelRatio: 4,
           width: paperW,
           height: paperH,
           backgroundColor: '#ffffff',
@@ -347,6 +347,118 @@ function App() {
         alert('Export PDF se nezdařil.')
       })
   }, [capturePaperArea, paperSettings])
+
+  // --- Export SVG ---
+  const handleExportSVG = useCallback(() => {
+    const rfEl = document.querySelector('.react-flow') as HTMLElement | null
+    if (!rfEl) return
+
+    const paperW = paperSettings.orientation === 'portrait'
+      ? paperSettings.width * MM_TO_PX
+      : paperSettings.height * MM_TO_PX
+    const paperH = paperSettings.orientation === 'portrait'
+      ? paperSettings.height * MM_TO_PX
+      : paperSettings.width * MM_TO_PX
+
+    const selectedNodeIds = nodes.filter((n) => n.selected).map((n) => n.id)
+    const selectedEdgeIds = edges.filter((e) => e.selected).map((e) => e.id)
+
+    if (selectedNodeIds.length > 0 || selectedEdgeIds.length > 0) {
+      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
+      setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+    }
+
+    requestAnimationFrame(() => {
+      const edgePaths = rfEl.querySelectorAll('.react-flow__edge-path')
+      const originalAttrs: { el: Element; stroke: string | null; strokeWidth: string | null }[] = []
+      edgePaths.forEach((path) => {
+        originalAttrs.push({
+          el: path,
+          stroke: path.getAttribute('stroke'),
+          strokeWidth: path.getAttribute('stroke-width'),
+        })
+        const computed = window.getComputedStyle(path)
+        path.setAttribute('stroke', computed.stroke || '#333')
+        path.setAttribute('stroke-width', computed.strokeWidth || '2')
+      })
+
+      toSvg(rfEl, {
+        width: paperW,
+        height: paperH,
+        backgroundColor: '#ffffff',
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.classList) {
+            if (
+              node.classList.contains('react-flow__controls') ||
+              node.classList.contains('react-flow__background') ||
+              node.classList.contains('react-flow__minimap') ||
+              node.classList.contains('react-flow__panel') ||
+              node.classList.contains('react-flow__handle') ||
+              node.classList.contains('react-flow__resize-control') ||
+              node.classList.contains('area-lock-icon') ||
+              node.classList.contains('area-controls') ||
+              node.classList.contains('color-palette') ||
+              node.classList.contains('node-resizer-handle') ||
+              node.classList.contains('node-resizer-line')
+            ) {
+              return false
+            }
+          }
+          return true
+        },
+      })
+        .then((dataUrl) => {
+          const svgContent = decodeURIComponent(dataUrl.split(',')[1])
+          if ('showSaveFilePicker' in window) {
+            (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> })
+              .showSaveFilePicker({
+                suggestedName: `diagram-${Date.now()}.svg`,
+                types: [{ description: 'SVG soubor', accept: { 'image/svg+xml': ['.svg'] } }],
+              })
+              .then((handle: FileSystemFileHandle) => handle.createWritable())
+              .then((writable: FileSystemWritableFileStream) => {
+                writable.write(svgContent)
+                return writable.close()
+              })
+              .catch((err: Error) => {
+                if ((err as { name?: string }).name !== 'AbortError') console.error(err)
+              })
+          } else {
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `diagram-${Date.now()}.svg`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }
+        })
+        .catch((err) => {
+          console.error('SVG export failed:', err)
+          alert('Export SVG se nezdařil.')
+        })
+        .finally(() => {
+          originalAttrs.forEach(({ el, stroke, strokeWidth }) => {
+            if (stroke === null) el.removeAttribute('stroke')
+            else el.setAttribute('stroke', stroke)
+            if (strokeWidth === null) el.removeAttribute('stroke-width')
+            else el.setAttribute('stroke-width', strokeWidth)
+          })
+          if (selectedNodeIds.length > 0) {
+            setNodes((nds) =>
+              nds.map((n) => selectedNodeIds.includes(n.id) ? { ...n, selected: true } : n)
+            )
+          }
+          if (selectedEdgeIds.length > 0) {
+            setEdges((eds) =>
+              eds.map((e) => selectedEdgeIds.includes(e.id) ? { ...e, selected: true } : e)
+            )
+          }
+        })
+    })
+  }, [paperSettings, nodes, edges, setNodes, setEdges])
 
   const createNode = useCallback((type: string, position: { x: number; y: number }, size?: { width: number; height: number }) => {
     const nodeLabels: Record<string, string> = {
@@ -451,6 +563,7 @@ function App() {
 
   // --- Copy & Paste (Ctrl+C / Ctrl+V) ---
   const clipboard = useRef<Node[]>([])
+  const clipboardEdges = useRef<Edge[]>([])
   const pasteCount = useRef(0)
 
   useEffect(() => {
@@ -475,6 +588,10 @@ function App() {
         const selected = nodes.filter((n) => n.selected)
         if (selected.length === 0) return
         clipboard.current = selected.map((n) => structuredClone(n))
+        const selectedIds = new Set(selected.map((n) => n.id))
+        clipboardEdges.current = edges
+          .filter((ed) => selectedIds.has(ed.source) && selectedIds.has(ed.target))
+          .map((ed) => structuredClone(ed))
         pasteCount.current = 0
       }
 
@@ -484,21 +601,33 @@ function App() {
         pasteCount.current += 1
         const offset = pasteCount.current * 20
 
+        const idMap = new Map<string, string>()
+        clipboard.current.forEach((n) => {
+          idMap.set(n.id, `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`)
+        })
+
         const newNodes = clipboard.current.map((n) => ({
           ...structuredClone(n),
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          id: idMap.get(n.id)!,
           position: { x: n.position.x + offset, y: n.position.y + offset },
           selected: true,
         }))
 
-        setNodes((nds) =>
-          nds.map((n) => ({ ...n, selected: false })).concat(newNodes)
-        )
+        const newEdges = clipboardEdges.current.map((ed) => ({
+          ...structuredClone(ed),
+          id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          source: idMap.get(ed.source)!,
+          target: idMap.get(ed.target)!,
+          selected: true,
+        }))
+
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })).concat(newNodes))
+        setEdges((eds) => eds.map((ed) => ({ ...ed, selected: false })).concat(newEdges))
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTool, nodes, setNodes, undo])
+  }, [activeTool, nodes, edges, setNodes, setEdges, undo])
 
   return (
     <div className="app-container">
@@ -516,6 +645,7 @@ function App() {
         onImport={handleImport}
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}
+        onExportSVG={handleExportSVG}
       />
       <div ref={canvasRef} className={`canvas-container${activeTool ? ' tool-active' : ''}`}>
         <ReactFlow

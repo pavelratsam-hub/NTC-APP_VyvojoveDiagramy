@@ -17,6 +17,7 @@ interface ToolbarProps {
   onImport: (file: File) => void
   onExportPNG: () => void
   onExportPDF: () => void
+  onExportSVG: () => void
 }
 
 function Toolbar({
@@ -33,6 +34,7 @@ function Toolbar({
   onImport,
   onExportPNG,
   onExportPDF,
+  onExportSVG,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -193,6 +195,9 @@ function Toolbar({
         </button>
         <button className="toolbar-btn" onClick={onExportPDF}>
           <span>Export PDF</span>
+        </button>
+        <button className="toolbar-btn" onClick={onExportSVG}>
+          <span>Export SVG (vektory)</span>
         </button>
         <button className="toolbar-btn" onClick={onExport}>
           <span>Exportovat JSON</span>
