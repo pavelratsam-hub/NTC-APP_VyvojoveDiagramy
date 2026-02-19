@@ -16,15 +16,15 @@ import {
   type OnConnect,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { toPng, toSvg } from 'html-to-image'
+import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 
 import Toolbar from './components/Toolbar/Toolbar'
 import PaperBoundary from './components/Paper/PaperBoundary'
 import { nodeTypes } from './components/Nodes/nodeTypes'
 import { defaultEdgeOptions, edgeTypes } from './components/Edges/edgeTypes'
-import type { PaperSettings } from './types/diagram'
-import { PAPER_SIZES } from './types/diagram'
+import type { PaperSettings, DiagramNodeData } from './types/diagram'
+import { PAPER_SIZES, COLOR_PAIRS } from './types/diagram'
 import './App.css'
 
 const STORAGE_KEY = 'diagram-autosave'
@@ -73,7 +73,7 @@ const DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState(saved?.nodes ?? defaultNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(saved?.edges ?? defaultEdges)
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, getViewport } = useReactFlow()
   const [showGrid, setShowGrid] = useState(false)
   const [showPaper, setShowPaper] = useState(false)
   const [paperSettings, setPaperSettings] = useState<PaperSettings>(saved?.paper ?? defaultPaperSettings)
@@ -348,117 +348,172 @@ function App() {
       })
   }, [capturePaperArea, paperSettings])
 
-  // --- Export SVG ---
+  // --- Export SVG (pravý vektorový SVG ze stavu diagramu + DOM cest) ---
   const handleExportSVG = useCallback(() => {
-    const rfEl = document.querySelector('.react-flow') as HTMLElement | null
-    if (!rfEl) return
+    const paperWmm = paperSettings.orientation === 'portrait' ? paperSettings.width : paperSettings.height
+    const paperHmm = paperSettings.orientation === 'portrait' ? paperSettings.height : paperSettings.width
+    const paperW = paperWmm * MM_TO_PX
+    const paperH = paperHmm * MM_TO_PX
 
-    const paperW = paperSettings.orientation === 'portrait'
-      ? paperSettings.width * MM_TO_PX
-      : paperSettings.height * MM_TO_PX
-    const paperH = paperSettings.orientation === 'portrait'
-      ? paperSettings.height * MM_TO_PX
-      : paperSettings.width * MM_TO_PX
+    // ViewBox odvozený z aktuálního viewportu – stejná oblast jako PNG export
+    const vp = getViewport()
+    const vbX = -vp.x / vp.zoom
+    const vbY = -vp.y / vp.zoom
+    const vbW = paperW / vp.zoom
+    const vbH = paperH / vp.zoom
 
-    const selectedNodeIds = nodes.filter((n) => n.selected).map((n) => n.id)
-    const selectedEdgeIds = edges.filter((e) => e.selected).map((e) => e.id)
+    // Escapování XML
+    const esc = (s: string) =>
+      String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
 
-    if (selectedNodeIds.length > 0 || selectedEdgeIds.length > 0) {
-      setNodes((nds) => nds.map((n) => ({ ...n, selected: false })))
-      setEdges((eds) => eds.map((e) => ({ ...e, selected: false })))
+    // Pročistit absolutní URL markeru → relativní: "url(http://.../#react-flow__X)" → "url(#react-flow__X)"
+    const cleanUrl = (url: string) => {
+      const m = url.match(/url\([^#)]*?(#[^)]+)\)/)
+      return m ? `url(${m[1]})` : url
     }
 
-    requestAnimationFrame(() => {
-      const edgePaths = rfEl.querySelectorAll('.react-flow__edge-path')
-      const originalAttrs: { el: Element; stroke: string | null; strokeWidth: string | null }[] = []
-      edgePaths.forEach((path) => {
-        originalAttrs.push({
-          el: path,
-          stroke: path.getAttribute('stroke'),
-          strokeWidth: path.getAttribute('stroke-width'),
+    const parts: string[] = []
+    parts.push(`<?xml version="1.0" encoding="UTF-8"?>`)
+    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${paperWmm}mm" height="${paperHmm}mm" viewBox="${vbX} ${vbY} ${vbW} ${vbH}">`)
+    parts.push(`<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="white"/>`)
+
+    // Marker definice (šipky) z ReactFlow DOM
+    const edgesSvgEl = document.querySelector('.react-flow__edges') as SVGSVGElement | null
+    const defs = edgesSvgEl?.querySelector('defs')
+    if (defs) parts.push(defs.outerHTML)
+
+    // --- Oblast uzly (pozadí, kreslí se jako první) ---
+    for (const node of nodes.filter((n) => n.type === 'area')) {
+      const d = node.data as DiagramNodeData
+      const cp = COLOR_PAIRS[d.colorIndex ?? 0]
+      const w = typeof node.style?.width === 'number' ? node.style.width : parseFloat(String(node.style?.width || '200'))
+      const h = typeof node.style?.height === 'number' ? node.style.height : parseFloat(String(node.style?.height || '150'))
+      const fill = d.showFill !== false ? cp.fill : 'none'
+      const dash = d.lineStyle === 'dashed' ? ` stroke-dasharray="6,4"` : ''
+      parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${w}" height="${h}" fill="${fill}" stroke="${cp.stroke}" stroke-width="2"${dash}/>`)
+      if (d.description) {
+        parts.push(`<text x="${node.position.x + 8}" y="${node.position.y + 18}" font-family="sans-serif" font-size="13" fill="${cp.stroke}">${esc(d.description)}</text>`)
+      }
+    }
+
+    // --- Hrany: d atribut z DOM (flow souřadnice), styl ze stavu ---
+    edgesSvgEl?.querySelectorAll('.react-flow__edge').forEach((group) => {
+      const path = group.querySelector('.react-flow__edge-path') as SVGPathElement | null
+      if (!path) return
+      const pathD = path.getAttribute('d')
+      if (!pathD) return
+      const edgeId = group.getAttribute('data-id') || ''
+      const edgeState = edges.find((e) => e.id === edgeId)
+      const isDashed = edgeState?.data?.lineStyle === 'dashed'
+      const rawMarkerEnd = path.getAttribute('marker-end') || ''
+      const rawMarkerStart = path.getAttribute('marker-start') || ''
+      const markerEnd = rawMarkerEnd ? cleanUrl(rawMarkerEnd) : ''
+      const markerStart = rawMarkerStart ? cleanUrl(rawMarkerStart) : ''
+
+      const attrs = [
+        `d="${esc(pathD)}"`,
+        `fill="none"`,
+        `stroke="#333333"`,
+        `stroke-width="2"`,
+        isDashed ? `stroke-dasharray="5,5"` : '',
+        markerEnd ? `marker-end="${esc(markerEnd)}"` : '',
+        markerStart ? `marker-start="${esc(markerStart)}"` : '',
+      ].filter(Boolean).join(' ')
+      parts.push(`<path ${attrs}/>`)
+
+      // Popisek hrany
+      if (edgeState?.data?.label) {
+        const len = path.getTotalLength()
+        const t = typeof edgeState.data.labelPosition === 'number' ? edgeState.data.labelPosition : 0.5
+        const pt = path.getPointAtLength(len * t)
+        const label = String(edgeState.data.label)
+        const lines = label.split('\n')
+        const fs = 12
+        const lh = fs * 1.4
+        const totalH = lines.length * lh
+        const bgW = Math.max(...lines.map((l) => l.length)) * fs * 0.6 + 12
+        parts.push(`<rect x="${pt.x - bgW / 2}" y="${pt.y - totalH / 2 - 4}" width="${bgW}" height="${totalH + 8}" fill="white" stroke="#cccccc" stroke-width="1" rx="3"/>`)
+        lines.forEach((line, i) => {
+          const ty = pt.y - totalH / 2 + i * lh + lh * 0.72
+          parts.push(`<text x="${pt.x}" y="${ty}" text-anchor="middle" font-family="sans-serif" font-size="${fs}" fill="#333333">${esc(line)}</text>`)
         })
-        const computed = window.getComputedStyle(path)
-        path.setAttribute('stroke', computed.stroke || '#333')
-        path.setAttribute('stroke-width', computed.strokeWidth || '2')
+      }
+    })
+
+    // --- Ostatní uzly ---
+    for (const node of nodes.filter((n) => n.type !== 'area')) {
+      const d = node.data as DiagramNodeData
+      const cp = COLOR_PAIRS[d.colorIndex ?? 0]
+      const nw =
+        typeof node.style?.width === 'number' ? node.style.width
+        : node.style?.width ? parseFloat(String(node.style.width))
+        : (DEFAULT_SIZES[node.type || 'action']?.width ?? 120)
+      const nh =
+        typeof node.style?.height === 'number' ? node.style.height
+        : node.style?.height ? parseFloat(String(node.style.height))
+        : (DEFAULT_SIZES[node.type || 'action']?.height ?? 60)
+      const cx = node.position.x + nw / 2
+      const cy = node.position.y + nh / 2
+      const fs = d.fontSize ?? 14
+      const labelLines = (d.label || '').split('\n')
+      const lh = fs * 1.3
+
+      // Tvar
+      if (node.type === 'action') {
+        parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${nw}" height="${nh}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2" rx="4"/>`)
+      } else if (node.type === 'startEnd') {
+        parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${nw}" height="${nh}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2" rx="${nh / 2}"/>`)
+      } else if (node.type === 'decision') {
+        const pts = `${cx},${node.position.y} ${node.position.x + nw},${cy} ${cx},${node.position.y + nh} ${node.position.x},${cy}`
+        parts.push(`<polygon points="${pts}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2"/>`)
+      }
+
+      // Popisek (víceřádkový, vycentrovaný)
+      labelLines.forEach((line, i) => {
+        const ty = cy - (labelLines.length - 1) * lh / 2 + i * lh
+        parts.push(`<text x="${cx}" y="${ty}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${fs}" fill="${cp.stroke}">${esc(line)}</text>`)
       })
 
-      toSvg(rfEl, {
-        width: paperW,
-        height: paperH,
-        backgroundColor: '#ffffff',
-        filter: (node) => {
-          if (node instanceof HTMLElement && node.classList) {
-            if (
-              node.classList.contains('react-flow__controls') ||
-              node.classList.contains('react-flow__background') ||
-              node.classList.contains('react-flow__minimap') ||
-              node.classList.contains('react-flow__panel') ||
-              node.classList.contains('react-flow__handle') ||
-              node.classList.contains('react-flow__resize-control') ||
-              node.classList.contains('area-lock-icon') ||
-              node.classList.contains('area-controls') ||
-              node.classList.contains('color-palette') ||
-              node.classList.contains('node-resizer-handle') ||
-              node.classList.contains('node-resizer-line')
-            ) {
-              return false
-            }
-          }
-          return true
-        },
-      })
-        .then((dataUrl) => {
-          const svgContent = decodeURIComponent(dataUrl.split(',')[1])
-          if ('showSaveFilePicker' in window) {
-            (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> })
-              .showSaveFilePicker({
-                suggestedName: `diagram-${Date.now()}.svg`,
-                types: [{ description: 'SVG soubor', accept: { 'image/svg+xml': ['.svg'] } }],
-              })
-              .then((handle: FileSystemFileHandle) => handle.createWritable())
-              .then((writable: FileSystemWritableFileStream) => {
-                writable.write(svgContent)
-                return writable.close()
-              })
-              .catch((err: Error) => {
-                if ((err as { name?: string }).name !== 'AbortError') console.error(err)
-              })
-          } else {
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `diagram-${Date.now()}.svg`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-          }
+      // Popis
+      if (d.description) {
+        parts.push(`<text x="${cx}" y="${node.position.y - 5}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="${cp.stroke}">${esc(d.description)}</text>`)
+      }
+    }
+
+    parts.push('</svg>')
+    const svgContent = parts.join('\n')
+
+    // Uložit soubor
+    if ('showSaveFilePicker' in window) {
+      (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> })
+        .showSaveFilePicker({
+          suggestedName: `diagram-${Date.now()}.svg`,
+          types: [{ description: 'SVG soubor', accept: { 'image/svg+xml': ['.svg'] } }],
         })
-        .catch((err) => {
-          console.error('SVG export failed:', err)
-          alert('Export SVG se nezdařil.')
+        .then((handle: FileSystemFileHandle) => handle.createWritable())
+        .then((writable: FileSystemWritableFileStream) => {
+          writable.write(svgContent)
+          return writable.close()
         })
-        .finally(() => {
-          originalAttrs.forEach(({ el, stroke, strokeWidth }) => {
-            if (stroke === null) el.removeAttribute('stroke')
-            else el.setAttribute('stroke', stroke)
-            if (strokeWidth === null) el.removeAttribute('stroke-width')
-            else el.setAttribute('stroke-width', strokeWidth)
-          })
-          if (selectedNodeIds.length > 0) {
-            setNodes((nds) =>
-              nds.map((n) => selectedNodeIds.includes(n.id) ? { ...n, selected: true } : n)
-            )
-          }
-          if (selectedEdgeIds.length > 0) {
-            setEdges((eds) =>
-              eds.map((e) => selectedEdgeIds.includes(e.id) ? { ...e, selected: true } : e)
-            )
-          }
+        .catch((err: Error) => {
+          if ((err as { name?: string }).name !== 'AbortError') console.error(err)
         })
-    })
-  }, [paperSettings, nodes, edges, setNodes, setEdges])
+    } else {
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `diagram-${Date.now()}.svg`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+  }, [paperSettings, nodes, edges, getViewport])
 
   const createNode = useCallback((type: string, position: { x: number; y: number }, size?: { width: number; height: number }) => {
     const nodeLabels: Record<string, string> = {
