@@ -370,37 +370,50 @@ function App() {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
 
-    // Pročistit absolutní URL markeru → relativní: "url(http://.../#react-flow__X)" → "url(#react-flow__X)"
-    const cleanUrl = (url: string) => {
-      const m = url.match(/url\([^#)]*?(#[^)]+)\)/)
-      return m ? `url(${m[1]})` : url
+    // Skutečná velikost uzlu: styl → measured → defaulty
+    const nodeSize = (node: Node) => {
+      const sw = node.style?.width
+      const sh = node.style?.height
+      const measured = (node as Node & { measured?: { width?: number; height?: number } }).measured
+      const w = typeof sw === 'number' ? sw
+        : typeof sw === 'string' ? parseFloat(sw)
+        : measured?.width ?? (DEFAULT_SIZES[node.type || 'action']?.width ?? 120)
+      const h = typeof sh === 'number' ? sh
+        : typeof sh === 'string' ? parseFloat(sh)
+        : measured?.height ?? (DEFAULT_SIZES[node.type || 'action']?.height ?? 60)
+      return { w, h }
     }
 
     const parts: string[] = []
     parts.push(`<?xml version="1.0" encoding="UTF-8"?>`)
     parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${paperWmm}mm" height="${paperHmm}mm" viewBox="${vbX} ${vbY} ${vbW} ${vbH}">`)
-    parts.push(`<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="white"/>`)
 
-    // Marker definice (šipky) z ReactFlow DOM
-    const edgesSvgEl = document.querySelector('.react-flow__edges') as SVGSVGElement | null
-    const defs = edgesSvgEl?.querySelector('defs')
-    if (defs) parts.push(defs.outerHTML)
+    // Vlastní marker pro šipky – bez závislosti na DOM ReactFlow defs (absolutní URL tam nefunguje v souboru)
+    parts.push(`<defs>`)
+    parts.push(`  <marker id="svg-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto">`)
+    parts.push(`    <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>`)
+    parts.push(`  </marker>`)
+    parts.push(`</defs>`)
+
+    // Bílé pozadí
+    parts.push(`<rect x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" fill="white"/>`)
 
     // --- Oblast uzly (pozadí, kreslí se jako první) ---
     for (const node of nodes.filter((n) => n.type === 'area')) {
       const d = node.data as DiagramNodeData
       const cp = COLOR_PAIRS[d.colorIndex ?? 0]
-      const w = typeof node.style?.width === 'number' ? node.style.width : parseFloat(String(node.style?.width || '200'))
-      const h = typeof node.style?.height === 'number' ? node.style.height : parseFloat(String(node.style?.height || '150'))
+      const { w, h } = nodeSize(node)
       const fill = d.showFill !== false ? cp.fill : 'none'
       const dash = d.lineStyle === 'dashed' ? ` stroke-dasharray="6,4"` : ''
       parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${w}" height="${h}" fill="${fill}" stroke="${cp.stroke}" stroke-width="2"${dash}/>`)
       if (d.description) {
-        parts.push(`<text x="${node.position.x + 8}" y="${node.position.y + 18}" font-family="sans-serif" font-size="13" fill="${cp.stroke}">${esc(d.description)}</text>`)
+        // popis nahoře vlevo uvnitř oblasti
+        parts.push(`<text x="${node.position.x + 8}" y="${node.position.y + 16}" font-family="sans-serif" font-size="13" fill="${cp.stroke}">${esc(d.description)}</text>`)
       }
     }
 
-    // --- Hrany: d atribut z DOM (flow souřadnice), styl ze stavu ---
+    // --- Hrany: d atribut z DOM (flow souřadnice), šipky ze stavu ---
+    const edgesSvgEl = document.querySelector('.react-flow__edges') as SVGSVGElement | null
     edgesSvgEl?.querySelectorAll('.react-flow__edge').forEach((group) => {
       const path = group.querySelector('.react-flow__edge-path') as SVGPathElement | null
       if (!path) return
@@ -409,10 +422,9 @@ function App() {
       const edgeId = group.getAttribute('data-id') || ''
       const edgeState = edges.find((e) => e.id === edgeId)
       const isDashed = edgeState?.data?.lineStyle === 'dashed'
-      const rawMarkerEnd = path.getAttribute('marker-end') || ''
-      const rawMarkerStart = path.getAttribute('marker-start') || ''
-      const markerEnd = rawMarkerEnd ? cleanUrl(rawMarkerEnd) : ''
-      const markerStart = rawMarkerStart ? cleanUrl(rawMarkerStart) : ''
+      // Přítomnost šipky ze stavu (spolehlivé), ne z DOM atributu (absolutní URL)
+      const hasMarkerEnd = !!edgeState?.markerEnd
+      const hasMarkerStart = !!edgeState?.markerStart
 
       const attrs = [
         `d="${esc(pathD)}"`,
@@ -420,8 +432,8 @@ function App() {
         `stroke="#333333"`,
         `stroke-width="2"`,
         isDashed ? `stroke-dasharray="5,5"` : '',
-        markerEnd ? `marker-end="${esc(markerEnd)}"` : '',
-        markerStart ? `marker-start="${esc(markerStart)}"` : '',
+        hasMarkerEnd ? `marker-end="url(#svg-arrow)"` : '',
+        hasMarkerStart ? `marker-start="url(#svg-arrow)"` : '',
       ].filter(Boolean).join(' ')
       parts.push(`<path ${attrs}/>`)
 
@@ -438,8 +450,9 @@ function App() {
         const bgW = Math.max(...lines.map((l) => l.length)) * fs * 0.6 + 12
         parts.push(`<rect x="${pt.x - bgW / 2}" y="${pt.y - totalH / 2 - 4}" width="${bgW}" height="${totalH + 8}" fill="white" stroke="#cccccc" stroke-width="1" rx="3"/>`)
         lines.forEach((line, i) => {
-          const ty = pt.y - totalH / 2 + i * lh + lh * 0.72
-          parts.push(`<text x="${pt.x}" y="${ty}" text-anchor="middle" font-family="sans-serif" font-size="${fs}" fill="#333333">${esc(line)}</text>`)
+          // fs*0.35 = posun baseline tak, aby střed textu byl na y (bez dominant-baseline)
+          const baseline = pt.y - totalH / 2 + i * lh + fs * 0.35
+          parts.push(`<text x="${pt.x}" y="${baseline}" text-anchor="middle" font-family="sans-serif" font-size="${fs}" fill="#333333">${esc(line)}</text>`)
         })
       }
     })
@@ -448,14 +461,7 @@ function App() {
     for (const node of nodes.filter((n) => n.type !== 'area')) {
       const d = node.data as DiagramNodeData
       const cp = COLOR_PAIRS[d.colorIndex ?? 0]
-      const nw =
-        typeof node.style?.width === 'number' ? node.style.width
-        : node.style?.width ? parseFloat(String(node.style.width))
-        : (DEFAULT_SIZES[node.type || 'action']?.width ?? 120)
-      const nh =
-        typeof node.style?.height === 'number' ? node.style.height
-        : node.style?.height ? parseFloat(String(node.style.height))
-        : (DEFAULT_SIZES[node.type || 'action']?.height ?? 60)
+      const { w: nw, h: nh } = nodeSize(node)
       const cx = node.position.x + nw / 2
       const cy = node.position.y + nh / 2
       const fs = d.fontSize ?? 14
@@ -472,22 +478,24 @@ function App() {
         parts.push(`<polygon points="${pts}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2"/>`)
       }
 
-      // Popisek (víceřádkový, vycentrovaný)
+      // Popisek – víceřádkový, vertikálně centrovaný
+      // Nepoužíváme dominant-baseline (špatná podpora), místo toho fs*0.35 posun baseline
       labelLines.forEach((line, i) => {
-        const ty = cy - (labelLines.length - 1) * lh / 2 + i * lh
-        parts.push(`<text x="${cx}" y="${ty}" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="${fs}" fill="${cp.stroke}">${esc(line)}</text>`)
+        const baseline = cy - (labelLines.length - 1) * lh / 2 + i * lh + fs * 0.35
+        parts.push(`<text x="${cx}" y="${baseline}" text-anchor="middle" font-family="sans-serif" font-size="${fs}" fill="${cp.stroke}">${esc(line)}</text>`)
       })
 
-      // Popis
+      // Popis uzlu (nad tvarem)
       if (d.description) {
-        parts.push(`<text x="${cx}" y="${node.position.y - 5}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="${cp.stroke}">${esc(d.description)}</text>`)
+        parts.push(`<text x="${cx}" y="${node.position.y - 4}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="${cp.stroke}">${esc(d.description)}</text>`)
       }
     }
 
     parts.push('</svg>')
-    const svgContent = parts.join('\n')
 
-    // Uložit soubor
+    // Uložit jako UTF-8 blob (zajišťuje správné kódování českých znaků)
+    const blob = new Blob([parts.join('\n')], { type: 'image/svg+xml;charset=utf-8' })
+
     if ('showSaveFilePicker' in window) {
       (window as Window & { showSaveFilePicker: (opts: unknown) => Promise<FileSystemFileHandle> })
         .showSaveFilePicker({
@@ -496,14 +504,13 @@ function App() {
         })
         .then((handle: FileSystemFileHandle) => handle.createWritable())
         .then((writable: FileSystemWritableFileStream) => {
-          writable.write(svgContent)
+          writable.write(blob)
           return writable.close()
         })
         .catch((err: Error) => {
           if ((err as { name?: string }).name !== 'AbortError') console.error(err)
         })
     } else {
-      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
