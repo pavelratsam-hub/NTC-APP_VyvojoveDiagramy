@@ -471,6 +471,17 @@ function App() {
       // Tvar
       if (node.type === 'action') {
         parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${nw}" height="${nh}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2" rx="4"/>`)
+        // Checkbox "hotovo" v pravém horním rohu
+        if (d.showDoneCheckbox !== false) {
+          const cbx = node.position.x + nw - 20
+          const cby = node.position.y + 5
+          if (d.done) {
+            parts.push(`<rect x="${cbx}" y="${cby}" width="14" height="14" fill="#16a34a" stroke="#15803d" stroke-width="1.5" rx="2"/>`)
+            parts.push(`<text x="${cbx + 7}" y="${cby + 11}" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="white">✓</text>`)
+          } else {
+            parts.push(`<rect x="${cbx}" y="${cby}" width="14" height="14" fill="white" stroke="#6b7280" stroke-width="1.5" rx="2"/>`)
+          }
+        }
       } else if (node.type === 'startEnd') {
         parts.push(`<rect x="${node.position.x}" y="${node.position.y}" width="${nw}" height="${nh}" fill="${cp.fill}" stroke="${cp.stroke}" stroke-width="2" rx="${nh / 2}"/>`)
       } else if (node.type === 'decision') {

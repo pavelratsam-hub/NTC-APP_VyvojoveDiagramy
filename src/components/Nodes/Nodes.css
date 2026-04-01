@@ -65,6 +65,44 @@
   justify-content: center;
 }
 
+/* Zaškrtávátko "hotovo" – pravý horní roh akce */
+.node-done-checkbox {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #6b7280;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  color: #374151;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.node-done-checkbox.checked {
+  background: #16a34a;
+  border-color: #15803d;
+  color: white;
+}
+
+.node-done-checkbox:hover {
+  border-color: #374151;
+  background: #f3f4f6;
+}
+
+.node-done-checkbox.checked:hover {
+  background: #15803d;
+}
+
 /* Start/Konec - zaoblený obdélník */
 .node-startend {
   position: relative;
@@ -288,6 +326,15 @@
   min-width: 20px;
   text-align: center;
   user-select: none;
+}
+
+.checkbox-visibility-controls {
+  position: absolute;
+  bottom: -76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  z-index: 20;
 }
 
 /* Popis oblasti – barva z inline style */

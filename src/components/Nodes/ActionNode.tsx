@@ -57,6 +57,25 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   )
 
   const fontSize = data.fontSize ?? 14
+  const done = data.done ?? false
+  const showDoneCheckbox = data.showDoneCheckbox ?? true
+
+  const toggleDone = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, done: !done } } : node
+      )
+    )
+  }, [id, setNodes, done])
+
+  const toggleShowDoneCheckbox = useCallback(() => {
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, showDoneCheckbox: !showDoneCheckbox } } : node
+      )
+    )
+  }, [id, setNodes, showDoneCheckbox])
 
   const setColor = useCallback((colorIndex: number) => {
     setNodes((nodes) =>
@@ -139,6 +158,15 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
         onDoubleClick={handleDoubleClick}
         style={{ background: colorPair.fill, borderColor: colorPair.stroke }}
       >
+        {showDoneCheckbox && (
+          <div
+            className={`node-done-checkbox ${done ? 'checked' : ''}`}
+            onClick={toggleDone}
+            title={done ? 'Hotovo – klikni pro zrušení' : 'Klikni pro označení jako hotovo'}
+          >
+            {done && <span>✓</span>}
+          </div>
+        )}
         <Handle type="target" position={Position.Top} id="top-target" />
         <Handle type="source" position={Position.Top} id="top-source" />
         <Handle type="target" position={Position.Left} id="left-target" />
@@ -179,6 +207,15 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               <button className="font-size-btn" onClick={() => changeFontSize(-2)} title="Zmenšit písmo">A−</button>
               <span className="font-size-value">{fontSize}</span>
               <button className="font-size-btn" onClick={() => changeFontSize(2)} title="Zvětšit písmo">A+</button>
+            </div>
+            <div className="checkbox-visibility-controls">
+              <button
+                className={`area-toggle-btn ${showDoneCheckbox ? 'active' : ''}`}
+                onClick={toggleShowDoneCheckbox}
+                title={showDoneCheckbox ? 'Skrýt zaškrtávátko' : 'Zobrazit zaškrtávátko'}
+              >
+                {showDoneCheckbox ? 'Zaškrtávátko: ZAP' : 'Zaškrtávátko: VYP'}
+              </button>
             </div>
           </>
         )}
