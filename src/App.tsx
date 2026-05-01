@@ -732,6 +732,7 @@ function App() {
           edgeTypes={edgeTypes}
           defaultEdgeOptions={defaultEdgeOptions}
           fitView
+          minZoom={0.01}
           snapToGrid
           snapGrid={[20, 20]}
           deleteKeyCode={['Backspace', 'Delete']}

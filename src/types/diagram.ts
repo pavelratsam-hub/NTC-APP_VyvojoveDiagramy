@@ -27,6 +27,7 @@ export type DiagramNodeData = {
   groupColor?: string
   groupLabel?: string
   done?: boolean
+  previousColorIndex?: number
   showDoneCheckbox?: boolean
   lineStyle?: 'solid' | 'dashed'
   showFill?: boolean

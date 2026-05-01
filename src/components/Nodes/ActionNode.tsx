@@ -60,12 +60,28 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const done = data.done ?? false
   const showDoneCheckbox = data.showDoneCheckbox ?? true
 
+  const GREEN_COLOR_INDEX = 2 // COLOR_PAIRS[2] = zelená
+
   const toggleDone = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, done: !done } } : node
-      )
+      nodes.map((node) => {
+        if (node.id !== id) return node
+        const becomingDone = !done
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            done: becomingDone,
+            colorIndex: becomingDone
+              ? GREEN_COLOR_INDEX
+              : ((node.data.previousColorIndex as number) ?? 0),
+            previousColorIndex: becomingDone
+              ? (node.data.colorIndex ?? 0)
+              : undefined,
+          },
+        }
+      })
     )
   }, [id, setNodes, done])
 
@@ -80,7 +96,9 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const setColor = useCallback((colorIndex: number) => {
     setNodes((nodes) =>
       nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, colorIndex } } : node
+        (node.id === id || (node.selected && node.type === 'action'))
+          ? { ...node, data: { ...node.data, colorIndex } }
+          : node
       )
     )
   }, [id, setNodes])
@@ -143,6 +161,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               onChange={(e) => setDescText(e.target.value)}
               onBlur={handleDescBlur}
               onKeyDown={handleDescKeyDown}
+              onMouseDown={(e) => e.stopPropagation()}
               className="node-description-input"
               placeholder="Popis..."
             />
@@ -182,6 +201,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
             onChange={(e) => setText(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            onMouseDown={(e) => e.stopPropagation()}
             className="node-textarea"
             style={{ fontSize }}
           />
