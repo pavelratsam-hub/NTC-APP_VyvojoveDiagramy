@@ -22,3 +22,8 @@
   pointer-events: none;
   z-index: 1000;
 }
+
+/* Hide group selection rectangle – nodes stay selected, palette clicks work */
+.react-flow__nodesselection {
+  display: none !important;
+}

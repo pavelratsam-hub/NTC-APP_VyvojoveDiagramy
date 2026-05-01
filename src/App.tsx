@@ -5,7 +5,6 @@ import {
   Background,
   BackgroundVariant,
   ConnectionMode,
-  SelectionMode,
   addEdge,
   useNodesState,
   useEdgesState,
@@ -562,27 +561,28 @@ function App() {
     setNodes((nds) => [...nds, newNode])
   }, [setNodes])
 
-  // --- Click-to-place: native DOM events on canvas container ---
+  // --- Click-to-place + custom drag-select: native DOM events on canvas container ---
   const canvasRef = useRef<HTMLDivElement>(null)
   const activeToolRef = useRef(activeTool)
   activeToolRef.current = activeTool
+  const isDraggingSelectionRef = useRef(false)
 
   useEffect(() => {
     const el = canvasRef.current
     if (!el) return
 
     const onMouseDown = (event: MouseEvent) => {
-      if (!activeToolRef.current) return
+      if (event.button !== 0) return
       const target = event.target as HTMLElement
       if (!target.closest('.react-flow__pane')) return
-      const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-      dragStart.current = flowPos
       const rect = el.getBoundingClientRect()
       dragStartScreen.current = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      dragStart.current = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      if (!activeToolRef.current) isDraggingSelectionRef.current = true
     }
 
     const onMouseMove = (event: MouseEvent) => {
-      if (!activeToolRef.current || !dragStart.current) return
+      if (!dragStart.current) return
       const rect = el.getBoundingClientRect()
       const sx = event.clientX - rect.left
       const sy = event.clientY - rect.top
@@ -601,27 +601,47 @@ function App() {
     }
 
     const onMouseUp = (event: MouseEvent) => {
-      if (!activeToolRef.current || !dragStart.current) return
+      if (!dragStart.current) return
       const endPos = screenToFlowPosition({ x: event.clientX, y: event.clientY })
       const dx = Math.abs(endPos.x - dragStart.current.x)
       const dy = Math.abs(endPos.y - dragStart.current.y)
 
-      if (dx < 10 && dy < 10) {
-        const defSize = DEFAULT_SIZES[activeToolRef.current] || { width: 120, height: 60 }
-        createNode(activeToolRef.current, {
-          x: dragStart.current.x - defSize.width / 2,
-          y: dragStart.current.y - defSize.height / 2,
-        })
-      } else {
-        const x = Math.min(dragStart.current.x, endPos.x)
-        const y = Math.min(dragStart.current.y, endPos.y)
-        createNode(activeToolRef.current, { x, y }, { width: dx, height: dy })
+      if (activeToolRef.current) {
+        if (dx < 10 && dy < 10) {
+          const defSize = DEFAULT_SIZES[activeToolRef.current] || { width: 120, height: 60 }
+          createNode(activeToolRef.current, {
+            x: dragStart.current.x - defSize.width / 2,
+            y: dragStart.current.y - defSize.height / 2,
+          })
+        } else {
+          const x = Math.min(dragStart.current.x, endPos.x)
+          const y = Math.min(dragStart.current.y, endPos.y)
+          createNode(activeToolRef.current, { x, y }, { width: dx, height: dy })
+        }
+        setActiveTool(null)
+      } else if (isDraggingSelectionRef.current && (dx >= 10 || dy >= 10)) {
+        const selX = Math.min(dragStart.current.x, endPos.x)
+        const selY = Math.min(dragStart.current.y, endPos.y)
+        setNodes(nds => nds.map(n => {
+          const sw = n.style?.width
+          const sh = n.style?.height
+          const measured = (n as Node & { measured?: { width?: number; height?: number } }).measured
+          const nw = typeof sw === 'number' ? sw : typeof sw === 'string' ? parseFloat(sw) : measured?.width ?? (DEFAULT_SIZES[n.type || 'action']?.width ?? 120)
+          const nh = typeof sh === 'number' ? sh : typeof sh === 'string' ? parseFloat(sh) : measured?.height ?? (DEFAULT_SIZES[n.type || 'action']?.height ?? 60)
+          const intersects = !(
+            n.position.x + nw < selX ||
+            n.position.x > selX + dx ||
+            n.position.y + nh < selY ||
+            n.position.y > selY + dy
+          )
+          return event.shiftKey ? (intersects ? { ...n, selected: true } : n) : { ...n, selected: intersects }
+        }))
       }
 
+      isDraggingSelectionRef.current = false
       dragStart.current = null
       dragStartScreen.current = null
       setDragPreview(null)
-      setActiveTool(null)
     }
 
     el.addEventListener('mousedown', onMouseDown)
@@ -632,7 +652,7 @@ function App() {
       el.removeEventListener('mousemove', onMouseMove)
       el.removeEventListener('mouseup', onMouseUp)
     }
-  }, [screenToFlowPosition, createNode])
+  }, [screenToFlowPosition, createNode, setNodes])
 
   // --- Copy & Paste (Ctrl+C / Ctrl+V) ---
   const clipboard = useRef<Node[]>([])
@@ -736,8 +756,7 @@ function App() {
           snapToGrid
           snapGrid={[20, 20]}
           deleteKeyCode={['Backspace', 'Delete']}
-          selectionOnDrag={!activeTool}
-          selectionMode={SelectionMode.Partial}
+          selectionOnDrag={false}
           multiSelectionKeyCode="Shift"
           panOnDrag={activeTool ? false : [1, 2]}
           zoomOnDoubleClick={false}
