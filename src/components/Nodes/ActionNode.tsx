@@ -160,7 +160,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               onChange={(e) => setDescText(e.target.value)}
               onBlur={handleDescBlur}
               onKeyDown={handleDescKeyDown}
-              onPointerDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}
               className="node-description-input"
               placeholder="Popis..."
             />
@@ -200,7 +200,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
             onChange={(e) => setText(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}
             className="node-textarea"
             style={{ fontSize }}
           />
@@ -211,7 +211,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
         )}
         {selected && (
           <>
-            <div className="color-palette" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="color-palette" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               {COLOR_PAIRS.map((cp, i) => (
                 <button
                   key={i}
@@ -222,12 +222,12 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
                 />
               ))}
             </div>
-            <div className="font-size-controls" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="font-size-controls" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               <button className="font-size-btn" onClick={() => changeFontSize(-2)} title="Zmenšit písmo">A−</button>
               <span className="font-size-value">{fontSize}</span>
               <button className="font-size-btn" onClick={() => changeFontSize(2)} title="Zvětšit písmo">A+</button>
             </div>
-            <div className="checkbox-visibility-controls" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="checkbox-visibility-controls" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               <button
                 className={`area-toggle-btn ${showDoneCheckbox ? 'active' : ''}`}
                 onClick={toggleShowDoneCheckbox}
