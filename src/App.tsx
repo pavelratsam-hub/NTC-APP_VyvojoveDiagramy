@@ -622,20 +622,25 @@ function App() {
       } else if (isDraggingSelectionRef.current && (dx >= 10 || dy >= 10)) {
         const selX = Math.min(dragStart.current.x, endPos.x)
         const selY = Math.min(dragStart.current.y, endPos.y)
-        setNodes(nds => nds.map(n => {
-          const sw = n.style?.width
-          const sh = n.style?.height
-          const measured = (n as Node & { measured?: { width?: number; height?: number } }).measured
-          const nw = typeof sw === 'number' ? sw : typeof sw === 'string' ? parseFloat(sw) : measured?.width ?? (DEFAULT_SIZES[n.type || 'action']?.width ?? 120)
-          const nh = typeof sh === 'number' ? sh : typeof sh === 'string' ? parseFloat(sh) : measured?.height ?? (DEFAULT_SIZES[n.type || 'action']?.height ?? 60)
-          const intersects = !(
-            n.position.x + nw < selX ||
-            n.position.x > selX + dx ||
-            n.position.y + nh < selY ||
-            n.position.y > selY + dy
-          )
-          return event.shiftKey ? (intersects ? { ...n, selected: true } : n) : { ...n, selected: intersects }
-        }))
+        const selW = dx
+        const selH = dy
+        const additive = event.shiftKey
+        setTimeout(() => {
+          setNodes(nds => nds.map(n => {
+            const sw = n.style?.width
+            const sh = n.style?.height
+            const measured = (n as Node & { measured?: { width?: number; height?: number } }).measured
+            const nw = typeof sw === 'number' ? sw : typeof sw === 'string' ? parseFloat(sw) : measured?.width ?? (DEFAULT_SIZES[n.type || 'action']?.width ?? 120)
+            const nh = typeof sh === 'number' ? sh : typeof sh === 'string' ? parseFloat(sh) : measured?.height ?? (DEFAULT_SIZES[n.type || 'action']?.height ?? 60)
+            const intersects = !(
+              n.position.x + nw < selX ||
+              n.position.x > selX + selW ||
+              n.position.y + nh < selY ||
+              n.position.y > selY + selH
+            )
+            return additive ? (intersects ? { ...n, selected: true } : n) : { ...n, selected: intersects }
+          }))
+        }, 0)
       }
 
       isDraggingSelectionRef.current = false
