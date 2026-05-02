@@ -19,7 +19,8 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
     if (isEditing && inputRef.current) {
       inputRef.current.focus()
     }
-  }, [isEditing])
+    setNodes(nds => nds.map(n => n.id === id ? { ...n, draggable: !isEditing } : n))
+  }, [isEditing, id, setNodes])
 
   useEffect(() => {
     if (isEditingDesc && descInputRef.current) {
@@ -161,7 +162,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               onBlur={handleDescBlur}
               onKeyDown={handleDescKeyDown}
               onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}
-              className="node-description-input"
+              className="node-description-input nodrag"
               placeholder="Popis..."
             />
           ) : (
@@ -201,7 +202,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}
-            className="node-textarea"
+            className="node-textarea nodrag"
             style={{ fontSize }}
           />
         ) : (
@@ -211,7 +212,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
         )}
         {selected && (
           <>
-            <div className="color-palette" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
+            <div className="color-palette nodrag" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               {COLOR_PAIRS.map((cp, i) => (
                 <button
                   key={i}
@@ -222,12 +223,12 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
                 />
               ))}
             </div>
-            <div className="font-size-controls" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
+            <div className="font-size-controls nodrag" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               <button className="font-size-btn" onClick={() => changeFontSize(-2)} title="Zmenšit písmo">A−</button>
               <span className="font-size-value">{fontSize}</span>
               <button className="font-size-btn" onClick={() => changeFontSize(2)} title="Zvětšit písmo">A+</button>
             </div>
-            <div className="checkbox-visibility-controls" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
+            <div className="checkbox-visibility-controls nodrag" onPointerDown={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation() }}>
               <button
                 className={`area-toggle-btn ${showDoneCheckbox ? 'active' : ''}`}
                 onClick={toggleShowDoneCheckbox}
