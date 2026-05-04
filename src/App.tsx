@@ -244,8 +244,8 @@ function App() {
   }, [serverDiagramId, nodes, edges, paperSettings])
 
   // --- Server: uložit jako nový (voláno z modalu) ---
-  const handleSaveNewToServer = useCallback(async (name: string) => {
-    const diagram = await createDiagram(name, { nodes, edges, paper: paperSettings })
+  const handleSaveNewToServer = useCallback(async (name: string, folderId: string | null) => {
+    const diagram = await createDiagram(name, { nodes, edges, paper: paperSettings }, folderId)
     setServerDiagramId(diagram.id)
     setServerDiagramName(diagram.name)
     setServerStatus('saved')

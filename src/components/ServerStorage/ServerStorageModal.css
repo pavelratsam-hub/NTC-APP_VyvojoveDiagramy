@@ -236,3 +236,203 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
 }
+
+/* Složky – save bar */
+.ssm-folder-select {
+  padding: 7px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+}
+
+.ssm-folder-select:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+
+/* Breadcrumb */
+.ssm-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: #f0f4ff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ssm-back-btn {
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.ssm-back-btn:hover {
+  background: #dbeafe;
+}
+
+.ssm-breadcrumb-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* Sekce složek */
+.ssm-section {
+  padding: 8px 0 0;
+}
+
+.ssm-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 20px 8px;
+}
+
+.ssm-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.ssm-section-title-sub {
+  display: block;
+  padding: 4px 20px 8px;
+}
+
+.ssm-section-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 8px 0;
+}
+
+.ssm-btn-new-folder {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.ssm-btn-new-folder:hover {
+  background: #f3f4f6;
+}
+
+.ssm-new-folder-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ssm-new-folder-row .ssm-inline-input {
+  flex: 1;
+  font-weight: 400;
+}
+
+/* Řádek složky */
+.ssm-folder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.ssm-folder-row:hover {
+  background: #f0f4ff;
+}
+
+.ssm-folder-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ssm-folder-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ssm-folder-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ssm-folder-name-input {
+  flex: 1;
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.ssm-folder-count {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Tlačítko ikona */
+.ssm-btn-icon {
+  padding: 5px 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  color: #374151;
+}
+
+.ssm-btn-icon:hover {
+  background: #f3f4f6;
+}
+
+.ssm-btn-delete:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Přesun diagramu */
+.ssm-move-select {
+  padding: 4px 6px;
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #111;
+  background: white;
+  cursor: pointer;
+  max-width: 130px;
+}
+
+.ssm-move-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+
+.ssm-info-small {
+  padding: 12px 20px;
+  text-align: left;
+}
