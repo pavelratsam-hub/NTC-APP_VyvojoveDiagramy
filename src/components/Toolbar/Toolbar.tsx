@@ -18,6 +18,10 @@ interface ToolbarProps {
   onExportPNG: () => void
   onExportPDF: () => void
   onExportSVG: () => void
+  serverStatus: 'idle' | 'saving' | 'saved' | 'error'
+  currentServerName: string | null
+  onSaveToServer: () => void
+  onOpenServerModal: () => void
 }
 
 function Toolbar({
@@ -35,6 +39,10 @@ function Toolbar({
   onExportPNG,
   onExportPDF,
   onExportSVG,
+  serverStatus,
+  currentServerName,
+  onSaveToServer,
+  onOpenServerModal,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -186,6 +194,28 @@ function Toolbar({
             </label>
           </div>
         )}
+      </div>
+
+      <div className="toolbar-section">
+        <h3>Server</h3>
+        {currentServerName && (
+          <div className="toolbar-server-name" title={currentServerName}>{currentServerName}</div>
+        )}
+        <button
+          className={`toolbar-btn server-save-btn${serverStatus === 'saved' ? ' saved' : serverStatus === 'error' ? ' error' : ''}`}
+          onClick={onSaveToServer}
+          disabled={serverStatus === 'saving'}
+        >
+          <span>
+            {serverStatus === 'saving' ? '⏳ Ukládám…'
+              : serverStatus === 'saved' ? '✓ Uloženo'
+              : serverStatus === 'error' ? '✗ Chyba uložení'
+              : currentServerName ? '☁ Přeuložit' : '☁ Uložit na server'}
+          </span>
+        </button>
+        <button className="toolbar-btn" onClick={onOpenServerModal}>
+          <span>☁ Načíst / Správa</span>
+        </button>
       </div>
 
       <div className="toolbar-section">

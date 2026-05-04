@@ -139,3 +139,31 @@
 .hidden-file-input {
   display: none;
 }
+
+/* Server sekce */
+.toolbar-server-name {
+  font-size: 11px;
+  color: #0066cc;
+  padding: 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.server-save-btn.saved {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.server-save-btn.error {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.server-save-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}

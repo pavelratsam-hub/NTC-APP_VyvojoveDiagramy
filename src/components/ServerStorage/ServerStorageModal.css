@@ -1,0 +1,238 @@
+.ssm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ssm-modal {
+  background: white;
+  border-radius: 10px;
+  width: 640px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.ssm-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.ssm-header h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #111;
+}
+
+.ssm-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 2px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.ssm-close:hover {
+  background: #f3f4f6;
+  color: #111;
+}
+
+.ssm-save-bar {
+  padding: 12px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.ssm-save-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ssm-name-input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.ssm-name-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+
+.ssm-btn-primary {
+  padding: 7px 14px;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ssm-btn-primary:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.ssm-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ssm-btn-cancel {
+  padding: 7px 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+}
+
+.ssm-btn-cancel:hover {
+  background: #f3f4f6;
+}
+
+.ssm-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.ssm-info {
+  padding: 32px 20px;
+  color: #6b7280;
+  text-align: center;
+  font-size: 14px;
+}
+
+.ssm-error {
+  padding: 20px;
+  color: #dc2626;
+  text-align: center;
+  font-size: 14px;
+}
+
+.ssm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  gap: 12px;
+}
+
+.ssm-row:hover {
+  background: #f9fafb;
+}
+
+.ssm-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ssm-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ssm-name:hover {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+.ssm-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ssm-owner {
+  font-size: 11px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.ssm-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ssm-row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ssm-btn-load {
+  padding: 5px 14px;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ssm-btn-load:hover {
+  background: #0052a3;
+}
+
+.ssm-btn-delete {
+  padding: 5px 9px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ssm-btn-delete:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.ssm-inline-input {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ssm-inline-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}

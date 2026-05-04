@@ -20,10 +20,12 @@ import { jsPDF } from 'jspdf'
 
 import Toolbar from './components/Toolbar/Toolbar'
 import PaperBoundary from './components/Paper/PaperBoundary'
+import ServerStorageModal from './components/ServerStorage/ServerStorageModal'
 import { nodeTypes } from './components/Nodes/nodeTypes'
 import { defaultEdgeOptions, edgeTypes } from './components/Edges/edgeTypes'
 import type { PaperSettings, DiagramNodeData } from './types/diagram'
 import { PAPER_SIZES, COLOR_PAIRS } from './types/diagram'
+import { createDiagram, updateDiagram, loadDiagram } from './api/diagrams'
 import './App.css'
 
 const STORAGE_KEY = 'diagram-autosave'
@@ -77,6 +79,10 @@ function App() {
   const [showPaper, setShowPaper] = useState(false)
   const [paperSettings, setPaperSettings] = useState<PaperSettings>(saved?.paper ?? defaultPaperSettings)
   const [activeTool, setActiveTool] = useState<string | null>(null)
+  const [serverDiagramId, setServerDiagramId] = useState<string | null>(null)
+  const [serverDiagramName, setServerDiagramName] = useState<string | null>(null)
+  const [serverStatus, setServerStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [showServerModal, setShowServerModal] = useState(false)
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const dragStartScreen = useRef<{ x: number; y: number } | null>(null)
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number; width: number; height: number } | null>(null) // screen px
@@ -178,24 +184,25 @@ function App() {
   }, [nodes, edges, paperSettings])
 
   // --- Nová plocha ---
+  const clearCanvas = useCallback(() => {
+    setNodes(defaultNodes)
+    setEdges([])
+    historyRef.current = []
+    lastSnapshotRef.current = ''
+    localStorage.removeItem(STORAGE_KEY)
+    setServerDiagramId(null)
+    setServerDiagramName(null)
+    setServerStatus('idle')
+  }, [setNodes, setEdges])
+
   const handleNewDiagram = useCallback(() => {
     const answer = window.confirm('Chcete před vymazáním exportovat diagram do JSON?')
     if (answer) {
-      handleExport().then(() => {
-        setNodes(defaultNodes)
-        setEdges([])
-        historyRef.current = []
-        lastSnapshotRef.current = ''
-        localStorage.removeItem(STORAGE_KEY)
-      })
+      handleExport().then(() => clearCanvas())
     } else {
-      setNodes(defaultNodes)
-      setEdges([])
-      historyRef.current = []
-      lastSnapshotRef.current = ''
-      localStorage.removeItem(STORAGE_KEY)
+      clearCanvas()
     }
-  }, [handleExport, setNodes, setEdges])
+  }, [handleExport, clearCanvas])
 
   // --- Import JSON ---
   const handleImport = useCallback((file: File) => {
@@ -217,6 +224,50 @@ function App() {
       }
     }
     reader.readAsText(file)
+  }, [setNodes, setEdges])
+
+  // --- Server: uložit ---
+  const handleSaveToServer = useCallback(async () => {
+    if (!serverDiagramId) {
+      setShowServerModal(true)
+      return
+    }
+    setServerStatus('saving')
+    try {
+      await updateDiagram(serverDiagramId, { content: { nodes, edges, paper: paperSettings } })
+      setServerStatus('saved')
+      setTimeout(() => setServerStatus('idle'), 2500)
+    } catch {
+      setServerStatus('error')
+      setTimeout(() => setServerStatus('idle'), 3000)
+    }
+  }, [serverDiagramId, nodes, edges, paperSettings])
+
+  // --- Server: uložit jako nový (voláno z modalu) ---
+  const handleSaveNewToServer = useCallback(async (name: string) => {
+    const diagram = await createDiagram(name, { nodes, edges, paper: paperSettings })
+    setServerDiagramId(diagram.id)
+    setServerDiagramName(diagram.name)
+    setServerStatus('saved')
+    setTimeout(() => setServerStatus('idle'), 2500)
+  }, [nodes, edges, paperSettings])
+
+  // --- Server: načíst ---
+  const handleLoadFromServer = useCallback(async (id: string, name: string) => {
+    try {
+      const diagram = await loadDiagram(id)
+      const data = diagram.content as { nodes: Node[]; edges: Edge[]; paper: PaperSettings }
+      setNodes(data.nodes)
+      setEdges(data.edges)
+      setPaperSettings(data.paper)
+      setServerDiagramId(id)
+      setServerDiagramName(name)
+      setServerStatus('idle')
+      historyRef.current = []
+      lastSnapshotRef.current = ''
+    } catch {
+      alert('Chyba při načítání diagramu ze serveru.')
+    }
   }, [setNodes, setEdges])
 
   // --- Pomocná funkce: zachytí oblast papíru jako PNG dataUrl ---
@@ -744,7 +795,19 @@ function App() {
         onExportPNG={handleExportPNG}
         onExportPDF={handleExportPDF}
         onExportSVG={handleExportSVG}
+        serverStatus={serverStatus}
+        currentServerName={serverDiagramName}
+        onSaveToServer={handleSaveToServer}
+        onOpenServerModal={() => setShowServerModal(true)}
       />
+      {showServerModal && (
+        <ServerStorageModal
+          onClose={() => setShowServerModal(false)}
+          onLoad={handleLoadFromServer}
+          onSaveNew={handleSaveNewToServer}
+          currentDiagramName={serverDiagramName ?? ''}
+        />
+      )}
       <div ref={canvasRef} className={`canvas-container${activeTool ? ' tool-active' : ''}`}>
         <ReactFlow
           nodes={nodes}
