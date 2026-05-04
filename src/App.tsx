@@ -86,6 +86,7 @@ function App() {
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const dragStartScreen = useRef<{ x: number; y: number } | null>(null)
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number; width: number; height: number } | null>(null) // screen px
+  const isConnectingRef = useRef(false)
 
   // --- Undo history ---
   const MAX_HISTORY = 50
@@ -624,6 +625,7 @@ function App() {
 
     const onMouseDown = (event: MouseEvent) => {
       if (event.button !== 0) return
+      if (isConnectingRef.current) return
       const target = event.target as HTMLElement
       if (!target.closest('.react-flow__pane')) return
       const rect = el.getBoundingClientRect()
@@ -633,6 +635,12 @@ function App() {
     }
 
     const onMouseMove = (event: MouseEvent) => {
+      if (isConnectingRef.current) {
+        dragStart.current = null
+        dragStartScreen.current = null
+        setDragPreview(null)
+        return
+      }
       if (!dragStart.current) return
       const rect = el.getBoundingClientRect()
       const sx = event.clientX - rect.left
@@ -815,6 +823,8 @@ function App() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onConnectStart={() => { isConnectingRef.current = true }}
+          onConnectEnd={() => { isConnectingRef.current = false }}
           connectionMode={ConnectionMode.Loose}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
