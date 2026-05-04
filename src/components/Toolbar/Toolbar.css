@@ -1,120 +1,185 @@
 .toolbar {
-  width: 200px;
+  width: 190px;
   height: 100%;
   background: #f8f9fa;
   border-right: 1px solid #e0e0e0;
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
-.toolbar-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.toolbar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.toolbar-section h3 {
-  font-size: 12px;
-  font-weight: 500;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.toolbar-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+/* Horní tlačítko Nová plocha */
+.tb-top-btn {
+  margin: 10px 10px 4px;
+  padding: 7px 10px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  text-align: left;
+  flex-shrink: 0;
 }
 
-.toolbar-btn:hover {
+.tb-top-btn:hover {
+  background: #e8f4ff;
+  border-color: #0066cc;
+  color: #0066cc;
+}
+
+/* Sekce */
+.tb-section {
+  border-top: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.tb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.tb-section-header:hover {
+  background: #f0f0f0;
+  color: #222;
+}
+
+.tb-chevron {
+  font-size: 14px;
+  color: #aaa;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.tb-chevron.open {
+  transform: rotate(0deg);
+}
+
+.tb-chevron:not(.open) {
+  transform: rotate(-90deg);
+}
+
+.tb-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px 10px 10px;
+}
+
+/* Mřížka tvarů 2×2 */
+.tb-shapes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.tb-shape-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 4px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #333;
+  transition: all 0.15s;
+}
+
+.tb-shape-btn:hover {
   background: #e8f4ff;
   border-color: #0066cc;
 }
 
-.toolbar-btn.active {
+.tb-shape-btn.active {
   background: #0066cc;
   color: white;
   border-color: #0066cc;
 }
 
-.shape-preview {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #333;
+.tb-shape-btn.active .shape-preview {
+  border-color: white;
 }
 
-.shape-action {
-  border-radius: 2px;
-}
-
-.shape-decision {
-  transform: rotate(45deg) scale(0.7);
-}
-
-.shape-startend {
-  border-radius: 12px;
-}
-
-.shape-area {
-  border-radius: 2px;
-  border-style: dashed;
-  background: #f3f4f6;
-}
-
-/* Řádek s tlačítky */
-.toolbar-row {
-  display: flex;
-  gap: 4px;
-}
-
-.toolbar-btn-small {
-  flex: 1;
-  padding: 6px 8px;
+/* Obecné malé tlačítko */
+.tb-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
   background: white;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
+  color: #333;
+  text-align: left;
+  transition: all 0.15s;
 }
 
-.toolbar-btn-small:hover {
+.tb-btn:hover {
   background: #e8f4ff;
   border-color: #0066cc;
 }
 
-.toolbar-btn-small.active {
+.tb-btn.active {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+/* Řada malých tlačítek */
+.tb-row {
+  display: flex;
+  gap: 4px;
+}
+
+.tb-btn-sm {
+  flex: 1;
+  padding: 5px 4px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #333;
+  transition: all 0.15s;
+}
+
+.tb-btn-sm:hover {
+  background: #e8f4ff;
+  border-color: #0066cc;
+}
+
+.tb-btn-sm.active {
   background: #0066cc;
   color: white;
   border-color: #0066cc;
 }
 
 /* Inputy pro vlastní rozměry */
-.toolbar-inputs {
+.tb-inputs {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 5px;
 }
 
-.toolbar-inputs label {
+.tb-inputs label {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -122,33 +187,29 @@
   color: #666;
 }
 
-.toolbar-inputs input {
-  padding: 6px 8px;
+.tb-inputs input {
+  padding: 5px 7px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
   width: 100%;
+  box-sizing: border-box;
 }
 
-.toolbar-inputs input:focus {
+.tb-inputs input:focus {
   outline: none;
   border-color: #0066cc;
 }
 
-/* Skrytý file input pro import */
-.hidden-file-input {
-  display: none;
-}
-
-/* Server sekce */
-.toolbar-server-name {
+/* Server */
+.tb-server-name {
   font-size: 11px;
   color: #0066cc;
-  padding: 2px 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
+  padding: 0 2px 2px;
 }
 
 .server-save-btn.saved {
@@ -167,3 +228,19 @@
   opacity: 0.7;
   cursor: default;
 }
+
+/* Náhledy tvarů */
+.shape-preview {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #333;
+  flex-shrink: 0;
+}
+
+.shape-action   { border-radius: 2px; }
+.shape-decision { transform: rotate(45deg) scale(0.7); }
+.shape-startend { border-radius: 10px; }
+.shape-area     { border-radius: 2px; border-style: dashed; background: #f3f4f6; }
+
+/* Skrytý file input */
+.hidden-file-input { display: none; }

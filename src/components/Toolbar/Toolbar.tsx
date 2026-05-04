@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { PaperSettings, PaperFormat } from '../../types/diagram'
 import { PAPER_SIZES } from '../../types/diagram'
 import './Toolbar.css'
@@ -24,6 +24,28 @@ interface ToolbarProps {
   onOpenServerModal: () => void
 }
 
+function Section({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className="tb-section">
+      <button className="tb-section-header" onClick={onToggle}>
+        <span>{title}</span>
+        <span className={`tb-chevron${open ? ' open' : ''}`}>▾</span>
+      </button>
+      {open && <div className="tb-section-body">{children}</div>}
+    </div>
+  )
+}
+
 function Toolbar({
   activeTool,
   onSetTool,
@@ -45,15 +67,20 @@ function Toolbar({
   onOpenServerModal,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [open, setOpen] = useState({
+    tvary: true,
+    zobrazeni: false,
+    papir: false,
+    server: true,
+    soubor: false,
+  })
+
+  const toggle = (key: keyof typeof open) =>
+    setOpen(prev => ({ ...prev, [key]: !prev[key] }))
 
   const handleFormatChange = (format: PaperFormat) => {
     const size = PAPER_SIZES[format]
-    onPaperChange({
-      ...paperSettings,
-      format,
-      width: size.width,
-      height: size.height,
-    })
+    onPaperChange({ ...paperSettings, format, width: size.width, height: size.height })
   }
 
   const handleOrientationToggle = () => {
@@ -66,192 +93,119 @@ function Toolbar({
   const handleCustomSize = (dimension: 'width' | 'height', value: string) => {
     const num = parseInt(value, 10)
     if (!isNaN(num) && num > 0) {
-      onPaperChange({
-        ...paperSettings,
-        format: 'custom',
-        [dimension]: num,
-      })
+      onPaperChange({ ...paperSettings, format: 'custom', [dimension]: num })
     }
   }
 
+  const shapes = [
+    { type: 'action',   label: 'Akce',       cls: 'shape-action' },
+    { type: 'decision', label: 'Podmínka',    cls: 'shape-decision' },
+    { type: 'startEnd', label: 'Start/Konec', cls: 'shape-startend' },
+    { type: 'area',     label: 'Oblast',      cls: 'shape-area' },
+  ]
+
   return (
     <div className="toolbar">
-      <h2 className="toolbar-title">Nástroje</h2>
+      <button className="tb-top-btn" onClick={onNewDiagram}>+ Nová plocha</button>
 
-      <button className="toolbar-btn" onClick={onNewDiagram}>
-        <span>Nová plocha</span>
-      </button>
-
-      <div className="toolbar-section">
-        <h3>Tvary</h3>
-        <button
-          className={`toolbar-btn${activeTool === 'action' ? ' active' : ''}`}
-          onClick={() => onSetTool(activeTool === 'action' ? null : 'action')}
-          title="Akce (obdélník) – klikni a pak klikni na plátno"
-        >
-          <div className="shape-preview shape-action"></div>
-          <span>Akce</span>
-        </button>
-
-        <button
-          className={`toolbar-btn${activeTool === 'decision' ? ' active' : ''}`}
-          onClick={() => onSetTool(activeTool === 'decision' ? null : 'decision')}
-          title="Podmínka (kosočtverec) – klikni a pak klikni na plátno"
-        >
-          <div className="shape-preview shape-decision"></div>
-          <span>Podmínka</span>
-        </button>
-
-        <button
-          className={`toolbar-btn${activeTool === 'startEnd' ? ' active' : ''}`}
-          onClick={() => onSetTool(activeTool === 'startEnd' ? null : 'startEnd')}
-          title="Start/Konec (zaoblený) – klikni a pak klikni na plátno"
-        >
-          <div className="shape-preview shape-startend"></div>
-          <span>Start/Konec</span>
-        </button>
-      </div>
-
-      <div className="toolbar-section">
-        <h3>Oblasti</h3>
-        <button
-          className={`toolbar-btn${activeTool === 'area' ? ' active' : ''}`}
-          onClick={() => onSetTool(activeTool === 'area' ? null : 'area')}
-          title="Oblast (obdélník) – klikni a pak klikni na plátno"
-        >
-          <div className="shape-preview shape-area"></div>
-          <span>Obdélník</span>
-        </button>
-      </div>
-
-      <div className="toolbar-section">
-        <h3>Zobrazení</h3>
-        <button
-          className={`toolbar-btn ${showGrid ? 'active' : ''}`}
-          onClick={onToggleGrid}
-        >
-          <span>{showGrid ? 'Skrýt mřížku' : 'Zobrazit mřížku'}</span>
-        </button>
-        <button
-          className={`toolbar-btn ${showPaper ? 'active' : ''}`}
-          onClick={onTogglePaper}
-        >
-          <span>{showPaper ? 'Skrýt papír' : 'Zobrazit papír'}</span>
-        </button>
-      </div>
-
-      <div className="toolbar-section">
-        <h3>Formát papíru</h3>
-        <div className="toolbar-row">
-          <button
-            className={`toolbar-btn-small ${paperSettings.format === 'A4' ? 'active' : ''}`}
-            onClick={() => handleFormatChange('A4')}
-          >
-            A4
-          </button>
-          <button
-            className={`toolbar-btn-small ${paperSettings.format === 'A5' ? 'active' : ''}`}
-            onClick={() => handleFormatChange('A5')}
-          >
-            A5
-          </button>
-          <button
-            className={`toolbar-btn-small ${paperSettings.format === 'custom' ? 'active' : ''}`}
-            onClick={() => handleFormatChange('custom')}
-          >
-            Vlastní
-          </button>
+      <Section title="Tvary" open={open.tvary} onToggle={() => toggle('tvary')}>
+        <div className="tb-shapes-grid">
+          {shapes.map(s => (
+            <button
+              key={s.type}
+              className={`tb-shape-btn${activeTool === s.type ? ' active' : ''}`}
+              onClick={() => onSetTool(activeTool === s.type ? null : s.type)}
+              title={s.label}
+            >
+              <div className={`shape-preview ${s.cls}`} />
+              <span>{s.label}</span>
+            </button>
+          ))}
         </div>
+      </Section>
 
-        <button
-          className="toolbar-btn"
-          onClick={handleOrientationToggle}
-        >
-          <span>{paperSettings.orientation === 'portrait' ? '↕ Na výšku' : '↔ Na šířku'}</span>
+      <Section title="Zobrazení" open={open.zobrazeni} onToggle={() => toggle('zobrazeni')}>
+        <button className={`tb-btn${showGrid ? ' active' : ''}`} onClick={onToggleGrid}>
+          {showGrid ? 'Skrýt mřížku' : 'Zobrazit mřížku'}
         </button>
+        <button className={`tb-btn${showPaper ? ' active' : ''}`} onClick={onTogglePaper}>
+          {showPaper ? 'Skrýt papír' : 'Zobrazit papír'}
+        </button>
+      </Section>
 
+      <Section title="Formát papíru" open={open.papir} onToggle={() => toggle('papir')}>
+        <div className="tb-row">
+          {(['A4', 'A5', 'custom'] as PaperFormat[]).map(fmt => (
+            <button
+              key={fmt}
+              className={`tb-btn-sm${paperSettings.format === fmt ? ' active' : ''}`}
+              onClick={() => handleFormatChange(fmt)}
+            >
+              {fmt === 'custom' ? 'Vlast.' : fmt}
+            </button>
+          ))}
+        </div>
+        <button className="tb-btn" onClick={handleOrientationToggle}>
+          {paperSettings.orientation === 'portrait' ? '↕ Na výšku' : '↔ Na šířku'}
+        </button>
         {paperSettings.format === 'custom' && (
-          <div className="toolbar-inputs">
+          <div className="tb-inputs">
             <label>
-              <span>Šířka (mm)</span>
+              Šířka (mm)
               <input
                 type="number"
                 value={paperSettings.width}
-                onChange={(e) => handleCustomSize('width', e.target.value)}
-                min="50"
-                max="1000"
+                onChange={e => handleCustomSize('width', e.target.value)}
+                min="50" max="1000"
               />
             </label>
             <label>
-              <span>Výška (mm)</span>
+              Výška (mm)
               <input
                 type="number"
                 value={paperSettings.height}
-                onChange={(e) => handleCustomSize('height', e.target.value)}
-                min="50"
-                max="1000"
+                onChange={e => handleCustomSize('height', e.target.value)}
+                min="50" max="1000"
               />
             </label>
           </div>
         )}
-      </div>
+      </Section>
 
-      <div className="toolbar-section">
-        <h3>Server</h3>
+      <Section title="Server" open={open.server} onToggle={() => toggle('server')}>
         {currentServerName && (
-          <div className="toolbar-server-name" title={currentServerName}>{currentServerName}</div>
+          <div className="tb-server-name" title={currentServerName}>{currentServerName}</div>
         )}
         <button
-          className={`toolbar-btn server-save-btn${serverStatus === 'saved' ? ' saved' : serverStatus === 'error' ? ' error' : ''}`}
+          className={`tb-btn server-save-btn${serverStatus === 'saved' ? ' saved' : serverStatus === 'error' ? ' error' : ''}`}
           onClick={onSaveToServer}
           disabled={serverStatus === 'saving'}
         >
-          <span>
-            {serverStatus === 'saving' ? '⏳ Ukládám…'
-              : serverStatus === 'saved' ? '✓ Uloženo'
-              : serverStatus === 'error' ? '✗ Chyba uložení'
-              : currentServerName ? '☁ Přeuložit' : '☁ Uložit na server'}
-          </span>
+          {serverStatus === 'saving' ? '⏳ Ukládám…'
+            : serverStatus === 'saved' ? '✓ Uloženo'
+            : serverStatus === 'error' ? '✗ Chyba'
+            : currentServerName ? '☁ Přeuložit' : '☁ Uložit na server'}
         </button>
-        <button className="toolbar-btn" onClick={onOpenServerModal}>
-          <span>☁ Načíst / Správa</span>
-        </button>
-      </div>
+        <button className="tb-btn" onClick={onOpenServerModal}>☁ Načíst / Správa</button>
+      </Section>
 
-      <div className="toolbar-section">
-        <h3>Soubor</h3>
-        <button className="toolbar-btn" onClick={onExportPNG}>
-          <span>Export PNG</span>
-        </button>
-        <button className="toolbar-btn" onClick={onExportPDF}>
-          <span>Export PDF</span>
-        </button>
-        <button className="toolbar-btn" onClick={onExportSVG}>
-          <span>Export SVG (vektory)</span>
-        </button>
-        <button className="toolbar-btn" onClick={onExport}>
-          <span>Exportovat JSON</span>
-        </button>
-        <button
-          className="toolbar-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <span>Importovat JSON</span>
-        </button>
+      <Section title="Soubor" open={open.soubor} onToggle={() => toggle('soubor')}>
+        <button className="tb-btn" onClick={onExportPNG}>Export PNG</button>
+        <button className="tb-btn" onClick={onExportPDF}>Export PDF</button>
+        <button className="tb-btn" onClick={onExportSVG}>Export SVG</button>
+        <button className="tb-btn" onClick={onExport}>Export JSON</button>
+        <button className="tb-btn" onClick={() => fileInputRef.current?.click()}>Import JSON</button>
         <input
           ref={fileInputRef}
           type="file"
           accept=".json"
           className="hidden-file-input"
-          onChange={(e) => {
+          onChange={e => {
             const file = e.target.files?.[0]
-            if (file) {
-              onImport(file)
-              e.target.value = ''
-            }
+            if (file) { onImport(file); e.target.value = '' }
           }}
         />
-      </div>
+      </Section>
     </div>
   )
 }
