@@ -50,6 +50,11 @@
   box-sizing: border-box;
 }
 
+.node-label.clickable,
+.node-decision-label.clickable {
+  cursor: text;
+}
+
 /* Akce - obdélník */
 .node-action {
   position: relative;
@@ -343,6 +348,199 @@
   opacity: 0.45;
 }
 
+/* ===== Settings button ⚙ ===== */
+.node-settings-btn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: #6b7280;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.node-settings-btn:hover,
+.node-settings-btn.active {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+/* ===== Settings panel ===== */
+.node-settings-panel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 30;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+  white-space: nowrap;
+}
+
+.nsp-colors {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.nsp-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.nsp-swatch:hover { transform: scale(1.2); }
+
+.nsp-swatch.active {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 1px #0066cc;
+}
+
+.nsp-fontsize {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nsp-btn {
+  padding: 3px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.nsp-btn:hover { background: #f3f4f6; }
+
+.nsp-value {
+  font-size: 12px;
+  color: #6b7280;
+  min-width: 22px;
+  text-align: center;
+  user-select: none;
+}
+
+.nsp-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.nsp-toggle {
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nsp-toggle:hover { background: #f3f4f6; }
+
+.nsp-toggle.active {
+  background: #dbeafe;
+  border-color: #1e40af;
+  color: #1e40af;
+}
+
+/* ===== Connect mode handle tap targets ===== */
+.connect-handle-tap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid white;
+  opacity: 0.85;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, background 0.1s, opacity 0.1s;
+}
+
+.connect-handle-tap:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.connect-handle-tap.source {
+  background: #dc2626;
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+  transform: scale(1.1);
+}
+
+/* Větší touch targety na mobilu */
+@media (max-width: 768px) {
+  .node-settings-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+    top: 3px;
+    left: 3px;
+  }
+
+  .nsp-swatch {
+    width: 28px;
+    height: 28px;
+  }
+
+  .nsp-btn {
+    padding: 7px 14px;
+    font-size: 14px;
+    min-height: 36px;
+  }
+
+  .nsp-toggle {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+
+  .node-settings-panel {
+    min-width: 180px;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  /* Handles pro spojovačky – větší plocha pro dotyk */
+  .react-flow__handle {
+    width: 18px;
+    height: 18px;
+  }
+
+  .connect-handle-tap {
+    width: 38px;
+    height: 38px;
+  }
+}
+
 /* Oblast (Area) – vždy pod ostatními nody */
 .react-flow__node-area {
   z-index: -1 !important;
@@ -393,7 +591,13 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.react-flow__node-area:hover .area-lock-icon {
+/* Viditelná při selection nebo při zamčení */
+.react-flow__node-area.selected .area-lock-icon {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.area-lock-icon.locked {
   opacity: 1;
   pointer-events: all;
 }

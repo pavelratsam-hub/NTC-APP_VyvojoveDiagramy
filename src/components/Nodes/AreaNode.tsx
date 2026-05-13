@@ -8,6 +8,7 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const resizeMods = useResizeModifiers()
   const [isEditingDesc, setIsEditingDesc] = useState(false)
   const [descText, setDescText] = useState(data.description ?? '')
+  const [showSettings, setShowSettings] = useState(false)
   const descInputRef = useRef<HTMLInputElement>(null)
   const { setNodes } = useReactFlow()
   const colorPair = COLOR_PAIRS[data.colorIndex ?? 0]
@@ -22,74 +23,60 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
     }
   }, [isEditingDesc])
 
-  const handleDescDoubleClick = useCallback((e: React.MouseEvent) => {
+  useEffect(() => {
+    if (!selected) setShowSettings(false)
+  }, [selected])
+
+  const stopPointer = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.nativeEvent.stopImmediatePropagation()
+  }, [])
+
+  const handleDescClick = useCallback((e: React.MouseEvent) => {
+    if (locked) return
     e.stopPropagation()
     setIsEditingDesc(true)
-  }, [])
+  }, [locked])
 
   const handleDescBlur = useCallback(() => {
     setIsEditingDesc(false)
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, description: descText } } : node
-      )
-    )
+    setNodes(nodes => nodes.map(n =>
+      n.id === id ? { ...n, data: { ...n.data, description: descText } } : n
+    ))
   }, [id, descText, setNodes])
 
-  const handleDescKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        handleDescBlur()
-      }
-      if (e.key === 'Escape') {
-        setDescText(data.description ?? '')
-        setIsEditingDesc(false)
-      }
-    },
-    [handleDescBlur, data.description]
-  )
+  const handleDescKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleDescBlur() }
+    if (e.key === 'Escape') { setDescText(data.description ?? ''); setIsEditingDesc(false) }
+  }, [handleDescBlur, data.description])
 
   const setColor = useCallback((colorIndex: number) => {
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, colorIndex } } : node
-      )
-    )
+    setNodes(nodes => nodes.map(n =>
+      n.id === id ? { ...n, data: { ...n.data, colorIndex } } : n
+    ))
   }, [id, setNodes])
 
   const toggleFill = useCallback(() => {
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, showFill: !showFill } } : node
-      )
-    )
+    setNodes(nodes => nodes.map(n =>
+      n.id === id ? { ...n, data: { ...n.data, showFill: !showFill } } : n
+    ))
   }, [id, setNodes, showFill])
 
   const toggleLock = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     const newLocked = !locked
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id
-          ? {
-              ...node,
-              draggable: !newLocked,
-              selectable: !newLocked,
-              data: { ...node.data, locked: newLocked },
-            }
-          : node
-      )
-    )
+    setNodes(nodes => nodes.map(n =>
+      n.id === id
+        ? { ...n, draggable: !newLocked, selectable: !newLocked, data: { ...n.data, locked: newLocked } }
+        : n
+    ))
   }, [id, setNodes, locked])
 
   const toggleLineStyle = useCallback(() => {
     const next = lineStyle === 'solid' ? 'dashed' : 'solid'
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, lineStyle: next } } : node
-      )
-    )
+    setNodes(nodes => nodes.map(n =>
+      n.id === id ? { ...n, data: { ...n.data, lineStyle: next } } : n
+    ))
   }, [id, setNodes, lineStyle])
 
   return (
@@ -106,13 +93,14 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
         <div
           className="node-description area-description"
           style={{ color: colorPair.stroke }}
-          onDoubleClick={locked ? undefined : handleDescDoubleClick}
+          onClick={!isEditingDesc ? handleDescClick : undefined}
+          onPointerDown={stopPointer}
         >
           {isEditingDesc && !locked ? (
             <input
               ref={descInputRef}
               value={descText}
-              onChange={(e) => setDescText(e.target.value)}
+              onChange={e => setDescText(e.target.value)}
               onBlur={handleDescBlur}
               onKeyDown={handleDescKeyDown}
               className="node-description-input"
@@ -128,16 +116,11 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
       )}
       <div
         className="node-area"
-        style={{
-          borderColor: colorPair.stroke,
-          borderStyle: lineStyle,
-        }}
+        style={{ borderColor: colorPair.stroke, borderStyle: lineStyle }}
       >
         <div
           className="node-area-fill"
-          style={{
-            background: showFill ? colorPair.fill : 'transparent',
-          }}
+          style={{ background: showFill ? colorPair.fill : 'transparent' }}
         />
         {locked && (
           <div
@@ -147,44 +130,61 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
           />
         )}
       </div>
+
+      {/* Lock ikona: viditelná při selection nebo při zamčení */}
       <button
-        className={`area-lock-icon ${locked ? 'locked' : ''}`}
+        className={`area-lock-icon${locked ? ' locked' : ''}`}
         onClick={toggleLock}
         onMouseDown={(e) => e.stopPropagation()}
         title={locked ? 'Odemknout oblast' : 'Zamknout oblast'}
       >
         {locked ? '🔒' : '🔓'}
       </button>
+
+      {/* Settings panel pro oblast (barvy, výplň, čára) */}
       {selected && !locked && (
-        <div className="area-controls">
-          <div className="color-palette">
-            {COLOR_PAIRS.map((cp, i) => (
-              <button
-                key={i}
-                className={`color-swatch ${i === (data.colorIndex ?? 0) ? 'active' : ''}`}
-                style={{ background: cp.fill, borderColor: cp.stroke }}
-                onClick={() => setColor(i)}
-                title={`Barva ${i + 1}`}
-              />
-            ))}
-          </div>
-          <div className="area-toggles">
-            <button
-              className={`area-toggle-btn ${showFill ? 'active' : ''}`}
-              onClick={toggleFill}
-              title={showFill ? 'Vypnout výplň' : 'Zapnout výplň'}
+        <>
+          <button
+            className={`node-settings-btn nodrag${showSettings ? ' active' : ''}`}
+            onPointerDown={stopPointer}
+            onClick={(e) => { e.stopPropagation(); setShowSettings(s => !s) }}
+            title="Nastavení"
+          >
+            ⚙
+          </button>
+          {showSettings && (
+            <div
+              className="node-settings-panel nodrag"
+              onPointerDown={stopPointer}
+              onClick={(e) => e.stopPropagation()}
             >
-              {showFill ? 'Výplň: ZAP' : 'Výplň: VYP'}
-            </button>
-            <button
-              className={`area-toggle-btn ${lineStyle === 'dashed' ? 'active' : ''}`}
-              onClick={toggleLineStyle}
-              title={lineStyle === 'solid' ? 'Čárkovaná čára' : 'Plná čára'}
-            >
-              {lineStyle === 'solid' ? 'Čára: plná' : 'Čára: čárk.'}
-            </button>
-          </div>
-        </div>
+              <div className="nsp-colors">
+                {COLOR_PAIRS.map((cp, i) => (
+                  <button
+                    key={i}
+                    className={`nsp-swatch${i === (data.colorIndex ?? 0) ? ' active' : ''}`}
+                    style={{ background: cp.fill, borderColor: cp.stroke }}
+                    onClick={() => setColor(i)}
+                  />
+                ))}
+              </div>
+              <div className="nsp-row">
+                <button
+                  className={`nsp-toggle${showFill ? ' active' : ''}`}
+                  onClick={toggleFill}
+                >
+                  {showFill ? 'Výplň: ZAP' : 'Výplň: VYP'}
+                </button>
+                <button
+                  className={`nsp-toggle${lineStyle === 'dashed' ? ' active' : ''}`}
+                  onClick={toggleLineStyle}
+                >
+                  {lineStyle === 'solid' ? 'Čára: plná' : 'Čára: čárk.'}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </>
   )

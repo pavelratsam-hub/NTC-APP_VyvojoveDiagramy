@@ -244,3 +244,58 @@
 
 /* Skrytý file input */
 .hidden-file-input { display: none; }
+
+/* ===== Mobilní layout ===== */
+@media (max-width: 768px) {
+  .toolbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100dvh;
+    width: 240px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
+  }
+
+  .toolbar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Větší touch targety */
+  .tb-top-btn {
+    padding: 11px 12px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  .tb-section-header {
+    padding: 12px 12px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .tb-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .tb-btn-sm {
+    padding: 8px 4px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  .tb-shape-btn {
+    padding: 10px 6px;
+    min-height: 64px;
+    font-size: 12px;
+  }
+
+  .tb-inputs input {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}

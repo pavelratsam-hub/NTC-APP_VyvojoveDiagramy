@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -26,6 +26,7 @@ import { defaultEdgeOptions, edgeTypes } from './components/Edges/edgeTypes'
 import type { PaperSettings, DiagramNodeData } from './types/diagram'
 import { PAPER_SIZES, COLOR_PAIRS } from './types/diagram'
 import { createDiagram, updateDiagram, loadDiagram } from './api/diagrams'
+import { ConnectModeContext, type SourceHandle } from './context/ConnectModeContext'
 import './App.css'
 
 const STORAGE_KEY = 'diagram-autosave'
@@ -87,6 +88,13 @@ function App() {
   const dragStartScreen = useRef<{ x: number; y: number } | null>(null)
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number; width: number; height: number } | null>(null) // screen px
   const isConnectingRef = useRef(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [connectMode, setConnectMode] = useState(false)
+  const [connectSourceHandle, setConnectSourceHandle] = useState<SourceHandle | null>(null)
+  const connectSourceRef = useRef<SourceHandle | null>(null)
+  connectSourceRef.current = connectSourceHandle
+  const connectModeRef = useRef(connectMode)
+  connectModeRef.current = connectMode
 
   // --- Undo history ---
   const MAX_HISTORY = 50
@@ -708,13 +716,88 @@ function App() {
       setDragPreview(null)
     }
 
+    const onTouchStart = (event: TouchEvent) => {
+      // V connect módu potlač syntetické mouse eventy, aby onNodeClick nevznikl dvakrát
+      if (connectModeRef.current) { event.preventDefault(); return }
+      if (!activeToolRef.current) return
+      const touch = event.touches[0]
+      if (!touch) return
+      const target = touch.target as HTMLElement
+      if (!target.closest('.react-flow__pane')) return
+      event.preventDefault()
+      const rect = el.getBoundingClientRect()
+      dragStartScreen.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top }
+      dragStart.current = screenToFlowPosition({ x: touch.clientX, y: touch.clientY })
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (connectModeRef.current) return
+      if (!dragStart.current) return
+      event.preventDefault()
+      const touch = event.touches[0]
+      if (!touch) return
+      const rect = el.getBoundingClientRect()
+      const sx = touch.clientX - rect.left
+      const sy = touch.clientY - rect.top
+      const startScreen = dragStartScreen.current
+      if (!startScreen) return
+      const dx = Math.abs(sx - startScreen.x)
+      const dy = Math.abs(sy - startScreen.y)
+      if (dx > 5 || dy > 5) {
+        setDragPreview({
+          x: Math.min(startScreen.x, sx),
+          y: Math.min(startScreen.y, sy),
+          width: dx,
+          height: dy,
+        })
+      }
+    }
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (connectModeRef.current) { event.preventDefault(); return }
+      if (!dragStart.current) return
+      event.preventDefault()
+      const touch = event.changedTouches[0]
+      if (!touch) return
+      if (!activeToolRef.current) {
+        dragStart.current = null
+        dragStartScreen.current = null
+        setDragPreview(null)
+        return
+      }
+      const endPos = screenToFlowPosition({ x: touch.clientX, y: touch.clientY })
+      const dx = Math.abs(endPos.x - dragStart.current.x)
+      const dy = Math.abs(endPos.y - dragStart.current.y)
+      const defSize = DEFAULT_SIZES[activeToolRef.current] || { width: 120, height: 60 }
+      if (dx < 15 && dy < 15) {
+        createNode(activeToolRef.current, {
+          x: dragStart.current.x - defSize.width / 2,
+          y: dragStart.current.y - defSize.height / 2,
+        })
+      } else {
+        const x = Math.min(dragStart.current.x, endPos.x)
+        const y = Math.min(dragStart.current.y, endPos.y)
+        createNode(activeToolRef.current, { x, y }, { width: dx, height: dy })
+      }
+      setActiveTool(null)
+      dragStart.current = null
+      dragStartScreen.current = null
+      setDragPreview(null)
+    }
+
     el.addEventListener('mousedown', onMouseDown)
     el.addEventListener('mousemove', onMouseMove)
     el.addEventListener('mouseup', onMouseUp)
+    el.addEventListener('touchstart', onTouchStart, { passive: false })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: false })
     return () => {
       el.removeEventListener('mousedown', onMouseDown)
       el.removeEventListener('mousemove', onMouseMove)
       el.removeEventListener('mouseup', onMouseUp)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
     }
   }, [screenToFlowPosition, createNode, setNodes])
 
@@ -725,10 +808,13 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // ESC – cancel active tool
-      if (e.key === 'Escape' && activeTool) {
-        setActiveTool(null)
-        return
+      // ESC – cancel active tool or connect source
+      if (e.key === 'Escape') {
+        if (activeTool) { setActiveTool(null); return }
+        if (connectSourceRef.current) {
+          setConnectSourceHandle(null)
+          return
+        }
       }
 
       // Ignore when typing in an input/textarea
@@ -786,11 +872,42 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [activeTool, nodes, edges, setNodes, setEdges, undo])
 
+  const onHandleTap = useCallback((nodeId: string, handlePos: SourceHandle['handlePos']) => {
+    const src = connectSourceRef.current
+    if (!src) {
+      setConnectSourceHandle({ nodeId, handlePos })
+    } else if (src.nodeId === nodeId && src.handlePos === handlePos) {
+      setConnectSourceHandle(null)
+    } else if (src.nodeId === nodeId) {
+      // jiný handle na stejném nodu → přepnout zdroj
+      setConnectSourceHandle({ nodeId, handlePos })
+    } else {
+      setEdges(eds => [...eds, {
+        id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+        source: src.nodeId,
+        target: nodeId,
+        sourceHandle: `${src.handlePos}-source`,
+        targetHandle: `${handlePos}-target`,
+      } as Edge])
+      setConnectSourceHandle(null)
+    }
+  }, [setEdges])
+
+  const handlePaneClick = useCallback(() => {
+    if (connectSourceRef.current) setConnectSourceHandle(null)
+  }, [])
+
+  const connectCtx = useMemo(() => ({
+    isActive: connectMode,
+    source: connectSourceHandle,
+    onTap: onHandleTap,
+  }), [connectMode, connectSourceHandle, onHandleTap])
+
   return (
     <div className="app-container">
       <Toolbar
         activeTool={activeTool}
-        onSetTool={setActiveTool}
+        onSetTool={(t) => { setActiveTool(t); setMobileMenuOpen(false) }}
         showGrid={showGrid}
         onToggleGrid={() => setShowGrid(!showGrid)}
         paperSettings={paperSettings}
@@ -807,6 +924,7 @@ function App() {
         currentServerName={serverDiagramName}
         onSaveToServer={handleSaveToServer}
         onOpenServerModal={() => setShowServerModal(true)}
+        mobileOpen={mobileMenuOpen}
       />
       {showServerModal && (
         <ServerStorageModal
@@ -816,13 +934,44 @@ function App() {
           currentDiagramName={serverDiagramName ?? ''}
         />
       )}
-      <div ref={canvasRef} className={`canvas-container${activeTool ? ' tool-active' : ''}`}>
+      {mobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
+      <ConnectModeContext.Provider value={connectCtx}>
+      <div ref={canvasRef} className={`canvas-container${activeTool ? ' tool-active' : ''}${connectMode ? ' connect-mode' : ''}`}>
+        <button
+          className="mobile-menu-btn"
+          onClick={() => setMobileMenuOpen(o => !o)}
+          aria-label="Otevřít menu"
+        >
+          ☰
+        </button>
+        <div className="mode-toggle">
+          <button
+            className={`mode-btn${!connectMode ? ' active' : ''}`}
+            onClick={() => { setConnectMode(false); setConnectSourceHandle(null) }}
+            title="Režim tvorby bloků"
+          >
+            ✎ Tvorba
+          </button>
+          <button
+            className={`mode-btn${connectMode ? ' active' : ''}`}
+            onClick={() => setConnectMode(true)}
+            title="Režim propojování"
+          >
+            → Propojit
+          </button>
+        </div>
+        {connectMode && connectSourceHandle && (
+          <div className="connect-hint">Klikni na bod cílového bloku</div>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onPaneClick={handlePaneClick}
           onConnectStart={() => { isConnectingRef.current = true }}
           onConnectEnd={() => { isConnectingRef.current = false }}
           connectionMode={ConnectionMode.Loose}
@@ -857,6 +1006,7 @@ function App() {
           />
         )}
       </div>
+      </ConnectModeContext.Provider>
     </div>
   )
 }

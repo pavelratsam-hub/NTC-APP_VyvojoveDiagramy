@@ -22,6 +22,7 @@ interface ToolbarProps {
   currentServerName: string | null
   onSaveToServer: () => void
   onOpenServerModal: () => void
+  mobileOpen?: boolean
 }
 
 function Section({
@@ -65,6 +66,7 @@ function Toolbar({
   currentServerName,
   onSaveToServer,
   onOpenServerModal,
+  mobileOpen,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState({
@@ -105,7 +107,7 @@ function Toolbar({
   ]
 
   return (
-    <div className="toolbar">
+    <div className={`toolbar${mobileOpen ? ' mobile-open' : ''}`}>
       <button className="tb-top-btn" onClick={onNewDiagram}>+ Nová plocha</button>
 
       <Section title="Tvary" open={open.tvary} onToggle={() => toggle('tvary')}>
