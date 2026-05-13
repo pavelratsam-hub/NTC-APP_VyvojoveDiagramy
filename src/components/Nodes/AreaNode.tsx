@@ -10,7 +10,7 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const [descText, setDescText] = useState(data.description ?? '')
   const [showSettings, setShowSettings] = useState(false)
   const descInputRef = useRef<HTMLInputElement>(null)
-  const { setNodes } = useReactFlow()
+  const { setNodes, deleteElements } = useReactFlow()
   const colorPair = COLOR_PAIRS[data.colorIndex ?? 0]
   const showFill = data.showFill !== false
   const lineStyle = data.lineStyle ?? 'solid'
@@ -71,6 +71,11 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
         : n
     ))
   }, [id, setNodes, locked])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    deleteElements({ nodes: [{ id }] })
+  }, [id, deleteElements])
 
   const toggleLineStyle = useCallback(() => {
     const next = lineStyle === 'solid' ? 'dashed' : 'solid'
@@ -151,6 +156,14 @@ function AreaNode({ id, data, selected }: NodeProps<DiagramNode>) {
             title="Nastavení"
           >
             ⚙
+          </button>
+          <button
+            className="node-delete-btn nodrag"
+            onPointerDown={stopPointer}
+            onClick={handleDelete}
+            title="Smazat"
+          >
+            🗑
           </button>
           {showSettings && (
             <div

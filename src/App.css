@@ -109,6 +109,31 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
+/* Plovoucí tlačítko smazání – jen na mobilu, jen pro vybrané spojnice */
+.delete-selected-btn {
+  position: absolute;
+  bottom: 80px;
+  right: 10px;
+  z-index: 50;
+  width: 52px;
+  height: 52px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 22px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.delete-selected-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
 /* V connect módu – všechny handly viditelné */
 .connect-mode .react-flow__handle {
   opacity: 1 !important;
@@ -149,5 +174,10 @@
     top: 58px;
     font-size: 13px;
     padding: 6px 12px;
+  }
+
+  .delete-selected-btn {
+    display: flex;
+    bottom: 90px;
   }
 }

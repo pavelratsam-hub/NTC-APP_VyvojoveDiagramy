@@ -897,6 +897,13 @@ function App() {
     if (connectSourceRef.current) setConnectSourceHandle(null)
   }, [])
 
+  const hasEdgeOnlySelection = !nodes.some(n => n.selected) && edges.some(e => e.selected)
+
+  const deleteSelected = useCallback(() => {
+    setNodes(nds => nds.filter(n => !n.selected))
+    setEdges(eds => eds.filter(e => !e.selected))
+  }, [setNodes, setEdges])
+
   const connectCtx = useMemo(() => ({
     isActive: connectMode,
     source: connectSourceHandle,
@@ -964,6 +971,15 @@ function App() {
         </div>
         {connectMode && connectSourceHandle && (
           <div className="connect-hint">Klikni na bod cílového bloku</div>
+        )}
+        {hasEdgeOnlySelection && (
+          <button
+            className="delete-selected-btn"
+            onClick={deleteSelected}
+            title="Smazat vybrané spojnice"
+          >
+            🗑
+          </button>
         )}
         <ReactFlow
           nodes={nodes}

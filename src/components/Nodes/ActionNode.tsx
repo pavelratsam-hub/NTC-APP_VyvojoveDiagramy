@@ -14,7 +14,7 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const [showSettings, setShowSettings] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const descInputRef = useRef<HTMLInputElement>(null)
-  const { setNodes } = useReactFlow()
+  const { setNodes, deleteElements } = useReactFlow()
   const colorPair = COLOR_PAIRS[data.colorIndex ?? 0]
 
   useEffect(() => {
@@ -91,6 +91,11 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
       return { ...n, data: { ...n.data, fontSize: Math.max(8, Math.min(32, current + delta)) } }
     }))
   }, [id, setNodes])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    deleteElements({ nodes: [{ id }] })
+  }, [id, deleteElements])
 
   const toggleShowDoneCheckbox = useCallback(() => {
     setNodes(nodes => nodes.map(n =>
@@ -203,6 +208,14 @@ function ActionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               title="Nastavení"
             >
               ⚙
+            </button>
+            <button
+              className="node-delete-btn nodrag"
+              onPointerDown={stopPointer}
+              onClick={handleDelete}
+              title="Smazat"
+            >
+              🗑
             </button>
             {showSettings && (
               <div

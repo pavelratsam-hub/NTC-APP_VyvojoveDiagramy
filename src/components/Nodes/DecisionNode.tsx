@@ -14,7 +14,7 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
   const [showSettings, setShowSettings] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const descInputRef = useRef<HTMLInputElement>(null)
-  const { setNodes } = useReactFlow()
+  const { setNodes, deleteElements } = useReactFlow()
   const colorPair = COLOR_PAIRS[data.colorIndex ?? 0]
 
   useEffect(() => {
@@ -63,6 +63,11 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
       n.id === id ? { ...n, data: { ...n.data, colorIndex } } : n
     ))
   }, [id, setNodes])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    deleteElements({ nodes: [{ id }] })
+  }, [id, deleteElements])
 
   const changeFontSize = useCallback((delta: number) => {
     setNodes(nodes => nodes.map(n => {
@@ -167,6 +172,14 @@ function DecisionNode({ id, data, selected }: NodeProps<DiagramNode>) {
               title="Nastavení"
             >
               ⚙
+            </button>
+            <button
+              className="node-delete-btn nodrag"
+              onPointerDown={stopPointer}
+              onClick={handleDelete}
+              title="Smazat"
+            >
+              🗑
             </button>
             {showSettings && (
               <div
